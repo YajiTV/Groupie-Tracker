@@ -1,0 +1,81 @@
+# Binaires et exécutables
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+groupie-tracker
+/groupie-tracker
+*.out
+
+# Fichiers de test et couverture
+*.test
+*.prof
+coverage.txt
+*.coverprofile
+
+# Dépendances Go
+vendor/
+go.work
+
+# Fichiers de build
+/dist/
+/build/
+/bin/
+
+# Variables d'environnement et secrets
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+config/secrets.yml
+api-keys.json
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Bases de données locales
+*.db
+*.sqlite
+*.sqlite3
+
+# Cache et fichiers temporaires
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+.cache/
+
+# IDEs et éditeurs
+.vscode/
+.idea/
+*.iml
+.DS_Store
+Thumbs.db
+*.sublime-project
+*.sublime-workspace
+
+# Fichiers OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Desktop.ini
+
+# Dépendances frontend
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+
+# Fichiers uploadés par les utilisateurs
+/uploads/
+/public/uploads/
+/static/uploads/
