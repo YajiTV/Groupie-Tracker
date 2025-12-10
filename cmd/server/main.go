@@ -13,7 +13,7 @@ func main() {
 	templates.Init()
 	router := app.SetupRouter()
 
-	port := ":8080"
+	port := ":8081"
 	fmt.Printf("Serveur sur http://localhost%s\n", port)
 	log.Fatal(http.ListenAndServe(port, router))
 }
