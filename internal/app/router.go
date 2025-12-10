@@ -3,7 +3,7 @@ package app
 import (
 	"net/http"
 
-	"github.com/YajiTV/groupie-tracker/internal/http"
+	httphandlers "github.com/YajiTV/groupie-tracker/internal/http"
 )
 
 func SetupRouter() *http.ServeMux {
