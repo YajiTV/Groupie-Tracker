@@ -3,6 +3,7 @@ package util
 import (
 	"encoding/json"
 	"net/http"
+	"net/url"
 )
 
 const ArtistsURL = "https://groupietrackers.herokuapp.com/api/artists"
@@ -14,6 +15,12 @@ type Artist struct {
 	Members      []string `json:"members"`
 	CreationDate int      `json:"creationDate"`
 	FirstAlbum   string   `json:"firstAlbum"`
+}
+
+func (a Artist) GetSpotifyURL() string {
+	// Encode le nom de l'artiste pour l'URL
+	encodedName := url.QueryEscape(a.Name)
+	return "https://open.spotify.com/search/" + encodedName
 }
 
 func FetchArtists() ([]Artist, error) {

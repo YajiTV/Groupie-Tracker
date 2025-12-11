@@ -5,8 +5,22 @@
     <title>{{.Artist.Name}}</title>
 </head>
 <body>
-    <h1>{{.Artist.Name}}</h1>
-    <img src="{{.Artist.Image}}" alt="{{.Artist.Name}}" width="300">
-    <p>Premier album: {{.Artist.FirstAlbum}}</p>
+    <h1>
+        <a href="https://open.spotify.com/search/{{.Artist.Name | urlquery}}"
+           target="_blank"
+           class="spotify-link">
+            {{.Artist.Name}}
+        </a>
+    </h1>
+    <img src="{{.Artist.Image}}" alt="{{.Artist.Name}}">
+    <p>Premier album: {{.Artist.FirstAlbum}}
+    </p>
+    <p>Crée en: {{.Artist.CreationDate}}</p>
+    <h2>Membres:</h2>
+    <ul>
+        {{range .Artist.Members}}
+            <li>{{.}}</li>
+        {{end}}
+    </ul>
 </body>
 </html>

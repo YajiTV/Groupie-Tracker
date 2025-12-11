@@ -7,7 +7,7 @@ import (
 
 var Templates *template.Template
 
-// Init charge tous les templates au démarrage
+// Init template
 func Init() {
 	var err error
 	Templates, err = template.ParseGlob("templates/*.gohtml")
