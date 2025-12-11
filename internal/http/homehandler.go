@@ -31,5 +31,5 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 		Artists: artists,
 	}
 
-	templates.Templates.ExecuteTemplate(w, "index.gohtml", data)
+	templates.Templates.ExecuteTemplate(w, "home.gohtml", data)
 }

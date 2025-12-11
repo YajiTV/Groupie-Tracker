@@ -7,13 +7,16 @@
 <body>
     <h1>
         <a href="https://open.spotify.com/search/{{.Artist.Name | urlquery}}"
-           target="_blank"
-           class="spotify-link">
+           target="_blank">
             {{.Artist.Name}}
         </a>
     </h1>
     <img src="{{.Artist.Image}}" alt="{{.Artist.Name}}">
-    <p>Premier album: {{.Artist.FirstAlbum}}
+    <p>Premier album:
+        {{/* <a href="https://open.spotify.com/search/{{.Artist.Name | urlquery}}%20album%20{{.Artist.FirstAlbum | urlquery}}"
+           target="_blank"> */}}
+            {{.Artist.FirstAlbum}}
+        {{/* </a> */}}
     </p>
     <p>Crée en: {{.Artist.CreationDate}}</p>
     <h2>Membres:</h2>

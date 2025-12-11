@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="/static/img/favicon.ico"/>
+    <title>{{.Title}}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #001a4d 0%, #004d8c 30%, #00bcd4 70%, #00e5ff 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+
+        .search-form {
+            max-width: 600px;
+            margin: 0 auto 40px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .search-form input {
+            flex: 1;
+            padding: 15px 20px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+        }
+
+        .search-form button {
+            padding: 15px 30px;
+            background: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .search-form button:hover {
+            transform: scale(1.05);
+        }
+
+        /* Grille des artistes */
+        .artists-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 30px;
+            padding: 20px 0;
+        }
+
+        .artist-card {
+            text-decoration: none;
+            display: block;
+        }
+
+        .artist-card-inner {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+        }
+
+        .artist-card-inner:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .artist-image {
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: cover;
+            border-radius: 15px;
+            margin-bottom: 15px;
+        }
+
+        .artist-name {
+            color: #1a1a1a;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+
+        .artist-info {
+            color: #666;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .no-results {
+            text-align: center;
+            color: white;
+            font-size: 24px;
+            padding: 60px 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header et recherche -->
+        <div class="header">
+            <h1>{{.Title}}</h1>
+            <form action="/search" method="GET" class="search-form">
+                <input
+                    type="text"
+                    name="q"
+                    placeholder="Rechercher un artiste...">
+                <button type="submit">Rechercher</button>
+            </form>
+        </div>
+
+        <!-- Grid artists -->
+        <div class="artists-grid">
+            {{range .Artists}}
+            <a href="/artist/{{.ID}}" class="artist-card">
+                <div class="artist-card-inner">
+                    <img
+                        src="{{.Image}}"
+                        alt="{{.Name}}"
+                        class="artist-image"
+                    >
+                    <div class="artist-name">{{.Name}}</div>
+                    <div class="artist-info">Créé en {{.CreationDate}}</div>
+                </div>
+            </a>
+            {{end}}
+        </div>
+
+        <!-- Message si aucun résultat -->
+        {{if not .Artists}}
+        <div class="no-results">
+            <p>😢 Aucun artiste trouvé</p>
+        </div>
+        {{end}}
+    </div>
+    <footer style="text-align: center; color: white; margin-top: 40px;">
+        <p>&copy; 2025 Groupie Tracker - Mathys & Axel</p>
+</body>
+</html>
