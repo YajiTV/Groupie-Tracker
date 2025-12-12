@@ -15,7 +15,7 @@ type HomeData struct {
 
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
-		http.NotFound(w, r)
+		NotFoundHandler(w, r)
 		return
 	}
 
