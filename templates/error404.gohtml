@@ -1,19 +1,25 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" href="/static/img/favicon.ico?v=1">
-    <title>{{.Title}}</title>
-    <link rel="stylesheet" href="/static/css/output.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="/static/img/favicon.ico?v=1">
+  <title>{{.Title}}</title>
+  <link rel="stylesheet" href="/static/css/output.css">
 </head>
+
 <body class="min-h-screen bg-linear-to-br from-black via-neutral-700 to-white text-neutral-100">
-    <div class="max-w-3xl mx-auto px-6 py-20 flex flex-col items-center">
-        <h1 class="text-6xl font-bold mb-6">404</h1>
-        <p class="text-xl mb-8 text-center">Désolé, la page que vous recherchez est introuvable.</p>
-        <a href="/" class="px-6 py-3 bg-white text-black rounded-full hover:bg-neutral-200 transition">
-            Retour à l'accueil
-        </a>
-    </div>
+  <div class="max-w-3xl mx-auto px-6 py-20 flex flex-col items-center">
+    <h1 class="text-6xl font-bold mb-6">404</h1>
+
+    <p class="text-xl mb-3 text-center">Désolé, la page que vous recherchez est introuvable.</p>
+    <p class="text-sm text-neutral-300 mb-8 text-center">
+      URL demandée : <span class="font-semibold">{{.Path}}</span>
+    </p>
+
+    <a href="/" class="px-6 py-3 bg-white text-black rounded-full hover:bg-neutral-200 transition">
+      Retour à l'accueil
+    </a>
+  </div>
 </body>
 </html>
