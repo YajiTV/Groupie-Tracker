@@ -10,7 +10,7 @@ import (
 )
 
 type ArtistData struct {
-	Artist util.Artist
+	Artist util.ArtistWithLocations
 }
 
 func ArtistHandler(w http.ResponseWriter, r *http.Request) {
@@ -20,12 +20,12 @@ func ArtistHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	artist, err := util.FetchArtistByID(id)
+	artistWithLocations, err := util.FetchArtistWithLocations(id)
 	if err != nil {
 		http.NotFound(w, r)
 		return
 	}
 
-	data := ArtistData{Artist: artist}
+	data := ArtistData{Artist: artistWithLocations}
 	templates.Templates.ExecuteTemplate(w, "artist.gohtml", data)
 }

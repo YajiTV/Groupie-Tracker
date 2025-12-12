@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{.Artist.Name}}</title>
+  <title>{{.Artist.Artist.Name}}</title>
 
   <link rel="icon" href="/static/img/favicon.ico?v=1">
   <link rel="stylesheet" href="/static/css/output.css">
@@ -35,8 +35,8 @@
           <!-- Image -->
           <div class="md:w-1/3">
             <img
-              src="{{.Artist.Image}}"
-              alt="{{.Artist.Name}}"
+              src="{{.Artist.Artist.Image}}"
+              alt="{{.Artist.Artist.Name}}"
               class="w-full aspect-square object-cover rounded-2xl shadow-lg filter grayscale"
             >
           </div>
@@ -44,10 +44,10 @@
           <!-- Infos -->
           <div class="md:w-2/3 flex flex-col justify-between">
             <div>
-              <h1 class="text-3xl md:text-4xl font-bold mb-3">{{.Artist.Name}}</h1>
+              <h1 class="text-3xl md:text-4xl font-bold mb-3">{{.Artist.Artist.Name}}</h1>
                <div class="mt-6">
               <a
-                href="https://open.spotify.com/search/{{.Artist.Name | urlquery}}"
+                href="https://open.spotify.com/search/{{.Artist.Artist.Name | urlquery}}"
                 target="_blank"
                 class="inline-block px-6 py-3 rounded-full bg-linear-to-r from-neutral-100 to-neutral-400 text-black font-semibold hover:from-white hover:to-neutral-300 shadow-md hover:shadow-xl transition"
               >
@@ -55,16 +55,16 @@
               </a>
 
               <p class="text-neutral-300 mb-2">
-                <span class="font-semibold">Premier album :</span> {{.Artist.FirstAlbum}}
+                <span class="font-semibold">Premier album :</span> {{.Artist.Artist.FirstAlbum}}
               </p>
 
               <p class="text-neutral-300 mb-4">
-                <span class="font-semibold">Créé en :</span> {{.Artist.CreationDate}}
+                <span class="font-semibold">Créé en :</span> {{.Artist.Artist.CreationDate}}
               </p>
 
               <h2 class="text-xl font-semibold text-white mb-2">Membres</h2>
               <ul class="list-disc list-inside space-y-1 text-neutral-200">
-                {{range .Artist.Members}}
+                {{range .Artist.Artist.Members}}
                   <li>
                     <a href="https://fr.wikipedia.org/w/index.php?search={{. | urlquery}}"
                        target="_blank"
@@ -81,8 +81,21 @@
 
         <!-- MAP -->
         <div class="mt-10">
-       <div id="map" data-artist-id="{{.Artist.ID}}" style="height:420px;"></div>
-<script src="/static/js/map.js" defer></script>
+       <div id="map" data-artist-id="{{.Artist.Artist.ID}}" style="height:420px;"></div>
+
+       <!-- Injection des données locations dans JavaScript -->
+       <script>
+         window.artistLocations = [
+           {{range .Artist.Locations}}
+           {
+             name: "{{.Name}}",
+             dates: [{{range $i, $date := .Dates}}{{if $i}}, {{end}}"{{$date}}"{{end}}]
+           },
+           {{end}}
+         ];
+       </script>
+
+<script src="/static/js/map_server.js" defer></script>
         </div>
       </div>
     </div>
