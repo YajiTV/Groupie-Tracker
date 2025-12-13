@@ -6,6 +6,53 @@
     <link rel="icon" href="/static/img/favicon.ico?v=1">
     <title>{{.Title}}</title>
 <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+<style>
+/* Container des suggestions */
+.suggestions-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #1a1a1a;
+    border: 1px solid #404040;
+    border-radius: 0 0 12px 12px;
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 1000;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* Une suggestion */
+.suggestion-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid #2a2a2a;
+    transition: background-color 0.2s;
+}
+
+.suggestion-item:hover,
+.suggestion-item.selected {
+    background-color: #2a2a2a;
+}
+
+/* Texte principal */
+.suggestion-text {
+    flex: 1;
+    color: #ffffff;
+    font-weight: 500;
+}
+
+/* Type (artiste/membre) */
+.suggestion-type {
+    color: #888;
+    font-size: 12px;
+    text-transform: uppercase;
+    margin-left: 8px;
+}
+</style>
 </head>
 <body class="min-h-screen bg-linear-to-br from-black via-neutral-900 to-neutral-800 text-white selection:bg-white selection:text-black">
     <div class="max-w-7xl mx-auto px-6 py-10">
@@ -15,12 +62,14 @@
         <div class="flex justify-center mb-12">
             <form action="/search" method="GET" class="relative group w-full max-w-2xl">
                 <div class="absolute -inset-1 bg-linear-to-r from-neutral-600 to-neutral-400 rounded-full blur opacity-25 group-hover:opacity-50 transition duration-500"></div>
-                <div class="relative flex items-center bg-black rounded-full overflow-hidden border border-neutral-700">
+                <div class="relative flex items-center bg-black rounded-full border border-neutral-700" style="position: relative;">
                     <input
                         type="text"
+                        id="searchInput"
                         name="q"
                         placeholder="Rechercher..."
                         class="w-full bg-transparent px-6 py-3 text-white placeholder-neutral-500 focus:outline-none"
+                        autocomplete="off"
                     >
                     <button type="submit" class="px-6 py-3 bg-white text-black hover:bg-neutral-200 transition flex items-center justify-center">
     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-black" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -63,5 +112,9 @@
         <div class="max-w-7xl mx-auto px-6 text-center text-sm text-neutral-500">
             &copy; 2026 Groupie-Tracker. Mathys P.K - Axel B. - Tous droits réservés.
         </div>
+    </footer>
+
+    <!-- JavaScript pour les suggestions -->
+    <script src="/static/js/search-suggestions.js"></script>
 </body>
 </html>
