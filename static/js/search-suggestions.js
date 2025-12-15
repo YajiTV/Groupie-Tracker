@@ -77,7 +77,9 @@ function fetchSuggestions(query) {
         .then(data => {
             // Sauvegarder les suggestions
             currentSuggestions = data.suggestions || [];
-            selectedIndex = -1; // Remettre la sélection à zéro
+            
+            // Automatiquement sélectionner le premier résultat s'il y en a
+            selectedIndex = currentSuggestions.length > 0 ? 0 : -1;
 
             // Afficher les suggestions
             displaySuggestions();
@@ -120,6 +122,9 @@ function displaySuggestions() {
 
     // Montrer la dropdown
     suggestionsContainer.style.display = 'block';
+    
+    // Mettre en surbrillance la sélection actuelle (premier élément)
+    updateSelection();
 }
 
 // Gestion des touches du clavier
@@ -185,4 +190,5 @@ function hideSuggestions() {
     currentSuggestions = [];
     selectedIndex = -1;
 }
+
 

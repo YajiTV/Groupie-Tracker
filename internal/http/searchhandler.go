@@ -17,7 +17,7 @@ type SearchData struct {
 }
 
 func SearchHandler(w http.ResponseWriter, r *http.Request) {
-	query := strings.TrimSpace(r.URL.Query().Get("q"))
+	query := r.URL.Query().Get("q")
 
 	// Si pas de query, rediriger vers l'accueil
 	if query == "" {
