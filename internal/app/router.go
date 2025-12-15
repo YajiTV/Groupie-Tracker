@@ -3,8 +3,6 @@ package app
 import (
 	"log"
 	"net/http"
-	"strconv"
-	"strings"
 
 	httphandlers "github.com/YajiTV/groupie-tracker/internal/http"
 )
@@ -12,34 +10,13 @@ import (
 func SetupRouter() *http.ServeMux {
 	mux := http.NewServeMux()
 
-	// Static
 	fs := http.FileServer(http.Dir(StaticDir))
 	mux.Handle("/static/", http.StripPrefix("/static/", fs))
 
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/" {
-			httphandlers.NotFoundHandler(w, r)
-			return
-		}
-		httphandlers.HomeHandler(w, r)
-	})
-
-	mux.HandleFunc("/artist/", func(w http.ResponseWriter, r *http.Request) {
-		rest := strings.TrimPrefix(r.URL.Path, "/artist/")
-		rest = strings.Trim(rest, "/")
-
-		if rest == "" || strings.Contains(rest, "/") {
-			httphandlers.NotFoundHandler(w, r)
-			return
-		}
-
-		id, err := strconv.Atoi(rest)
-		if err != nil || id <= 0 {
-			httphandlers.NotFoundHandler(w, r)
-			return
-		}
-		httphandlers.ArtistHandler(w, r)
-	})
+	mux.HandleFunc("/", httphandlers.HomeHandler)
+	mux.HandleFunc("/artist/", httphandlers.ArtistHandler)
+	mux.HandleFunc("/search", httphandlers.SearchHandler)
+	mux.HandleFunc("/api/suggestions", httphandlers.SuggestionsHandler)
 
 	return mux
 }
