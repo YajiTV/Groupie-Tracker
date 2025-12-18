@@ -150,3 +150,33 @@ func FetchArtistWithLocations(id int) (ArtistWithLocations, error) {
 		Locations: locations,
 	}, nil
 }
+
+func FetchLocations() (LocationResponse, error) {
+	resp, err := http.Get(LocationsURL)
+	if err != nil {
+		return LocationResponse{}, err
+	}
+	defer resp.Body.Close()
+
+	var locationResponse LocationResponse
+	if err := json.NewDecoder(resp.Body).Decode(&locationResponse); err != nil {
+		return LocationResponse{}, err
+	}
+
+	return locationResponse, nil
+}
+
+func FetchRelations() (RelationResponse, error) {
+	resp, err := http.Get(RelationURL)
+	if err != nil {
+		return RelationResponse{}, err
+	}
+	defer resp.Body.Close()
+
+	var relationResponse RelationResponse
+	if err := json.NewDecoder(resp.Body).Decode(&relationResponse); err != nil {
+		return RelationResponse{}, err
+	}
+
+	return relationResponse, nil
+}

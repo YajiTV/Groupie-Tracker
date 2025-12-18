@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="/static/img/favicon.ico?v=1">
+    <title>{{.Title}} - Groupie Tracker</title>
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+</head>
+<body class="bg-gray-900 text-white font-sans">
+    <!-- Header -->
+    <header class="bg-gray-800 shadow-lg">
+        <div class="max-w-6xl mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <a href="/" class="text-2xl font-bold text-green-400 hover:text-green-300 transition-colors">
+                    Groupie Tracker
+                </a>
+                <nav class="flex space-x-6">
+                    <a href="/" class="hover:text-green-400 transition-colors">Accueil</a>
+                    <a href="/search" class="hover:text-green-400 transition-colors">Recherche</a>
+                    <a href="/filters" class="text-green-400">Filtres</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-6 py-8">
+        <!-- Titre -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold mb-2">{{.Title}}</h1>
+            <p class="text-gray-400">
+                {{if .HasActiveFilters}}
+                    {{.Count}} résultat(s) avec les filtres appliqués
+                {{else}}
+                    {{.Count}} artiste(s) au total
+                {{end}}
+            </p>
+        </div>
+
+        <!-- Formulaire de filtres -->
+        <div class="bg-gray-800 rounded-lg p-6 mb-8">
+            <h2 class="text-xl font-semibold mb-4 text-green-400">Filtres</h2>
+            
+            <form action="/filters" method="GET" class="space-y-6">
+                <!-- Recherche textuelle -->
+                <div>
+                    <label class="block text-sm font-medium mb-2">Recherche</label>
+                    <input type="text" name="q" value="{{.AppliedFilters.Query}}" 
+                           placeholder="Nom d'artiste ou membre..."
+                           class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:border-green-400 focus:ring-1 focus:ring-green-400 outline-none transition-colors">
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <!-- Année de création -->
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Année de création</label>
+                        <div class="space-y-2">
+                            <input type="number" name="creation_year_min" 
+                                   value="{{if .AppliedFilters.CreationYearMin}}{{.AppliedFilters.CreationYearMin}}{{end}}"
+                                   placeholder="Min ({{.FilterOptions.MinCreationYear}})" 
+                                   min="{{.FilterOptions.MinCreationYear}}" max="{{.FilterOptions.MaxCreationYear}}"
+                                   class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded focus:border-green-400 focus:ring-1 focus:ring-green-400 outline-none transition-colors">
+                            <input type="number" name="creation_year_max" 
+                                   value="{{if .AppliedFilters.CreationYearMax}}{{.AppliedFilters.CreationYearMax}}{{end}}"
+                                   placeholder="Max ({{.FilterOptions.MaxCreationYear}})" 
+                                   min="{{.FilterOptions.MinCreationYear}}" max="{{.FilterOptions.MaxCreationYear}}"
+                                   class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded focus:border-green-400 focus:ring-1 focus:ring-green-400 outline-none transition-colors">
+                        </div>
+                    </div>
+
+                    <!-- Date premier album -->
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Année premier album</label>
+                        <div class="space-y-2">
+                            <input type="number" name="album_year_min" 
+                                   value="{{if .AppliedFilters.AlbumYearMin}}{{.AppliedFilters.AlbumYearMin}}{{end}}"
+                                   placeholder="Min ({{.FilterOptions.MinAlbumYear}})" 
+                                   min="{{.FilterOptions.MinAlbumYear}}" max="{{.FilterOptions.MaxAlbumYear}}"
+                                   class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded focus:border-green-400 focus:ring-1 focus:ring-green-400 outline-none transition-colors">
+                            <input type="number" name="album_year_max" 
+                                   value="{{if .AppliedFilters.AlbumYearMax}}{{.AppliedFilters.AlbumYearMax}}{{end}}"
+                                   placeholder="Max ({{.FilterOptions.MaxAlbumYear}})" 
+                                   min="{{.FilterOptions.MinAlbumYear}}" max="{{.FilterOptions.MaxAlbumYear}}"
+                                   class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded focus:border-green-400 focus:ring-1 focus:ring-green-400 outline-none transition-colors">
+                        </div>
+                    </div>
+
+                    <!-- Nombre de membres -->
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Nombre de membres</label>
+                        <div class="space-y-2">
+                            {{range .FilterOptions.MemberCounts}}
+                            <label class="flex items-center space-x-2 cursor-pointer">
+                                <input type="checkbox" name="member_count" value="{{.}}"
+                                       {{range $.AppliedFilters.MemberCounts}}{{if eq . $}}checked{{end}}{{end}}
+                                       class="w-4 h-4 text-green-400 bg-gray-700 border-gray-600 rounded focus:ring-green-400 focus:ring-2">
+                                <span>{{.}} membre{{if gt . 1}}s{{end}}</span>
+                            </label>
+                            {{end}}
+                        </div>
+                    </div>
+
+                    <!-- Lieux de concerts -->
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Lieux de concerts</label>
+                        <div class="space-y-2 max-h-40 overflow-y-auto">
+                            {{range .FilterOptions.Locations}}
+                            <label class="flex items-center space-x-2 cursor-pointer">
+                                <input type="checkbox" name="location" value="{{.}}"
+                                       {{range $.AppliedFilters.Locations}}{{if eq . $}}checked{{end}}{{end}}
+                                       class="w-4 h-4 text-green-400 bg-gray-700 border-gray-600 rounded focus:ring-green-400 focus:ring-2">
+                                <span class="text-sm">{{.}}</span>
+                            </label>
+                            {{end}}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Boutons -->
+                <div class="flex space-x-4">
+                    <button type="submit" 
+                            class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium">
+                        Appliquer les filtres
+                    </button>
+                    <a href="/filters" 
+                       class="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium">
+                        Réinitialiser
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Résultats -->
+        {{if .Artists}}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {{range .Artists}}
+                <div class="bg-gray-800 rounded-lg overflow-hidden hover:bg-gray-750 transition-colors">
+                    <a href="/artist/{{.ID}}" class="block">
+                        <div class="aspect-square overflow-hidden">
+                            <img src="{{.Image}}" alt="{{.Name}}" 
+                                 class="w-full h-full object-cover hover:scale-105 transition-transform duration-300">
+                        </div>
+                        <div class="p-4">
+                            <h3 class="font-semibold text-lg mb-1 text-white">{{.Name}}</h3>
+                            <p class="text-gray-400 text-sm mb-2">{{len .Members}} membre{{if gt (len .Members) 1}}s{{end}}</p>
+                            <p class="text-gray-500 text-xs">Créé en {{.CreationDate}}</p>
+                        </div>
+                    </a>
+                </div>
+                {{end}}
+            </div>
+        {{else}}
+            <div class="text-center py-16">
+                <div class="w-24 h-24 mx-auto mb-4 text-gray-600">
+                    <!-- Icône SVG de filtrage -->
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.414A1 1 0 013 6.707V4z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-semibold mb-2">Aucun résultat</h3>
+                <p class="text-gray-400 mb-4">Aucun artiste ne correspond aux filtres sélectionnés</p>
+                <a href="/filters" class="text-green-400 hover:text-green-300 font-medium">
+                    Réinitialiser les filtres
+                </a>
+            </div>
+        {{end}}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 mt-16 py-6">
+        <div class="max-w-6xl mx-auto px-6 text-center text-gray-400">
+            <p>&copy; 2025 Groupie Tracker - Projet Ynov</p>
+        </div>
+    </footer>
+</body>
+</html>
