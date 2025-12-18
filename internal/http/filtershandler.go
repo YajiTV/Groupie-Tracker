@@ -10,6 +10,7 @@ import (
 	"github.com/YajiTV/groupie-tracker/internal/util"
 )
 
+// FiltersData contient les données pour la page de filtres
 type FiltersData struct {
 	Title            string
 	Artists          []util.Artist
@@ -19,6 +20,7 @@ type FiltersData struct {
 	HasActiveFilters bool
 }
 
+// FilterOptions contient les options disponibles pour les filtres
 type FilterOptions struct {
 	MinCreationYear int
 	MaxCreationYear int
@@ -28,40 +30,68 @@ type FilterOptions struct {
 	Locations       []string
 }
 
+// AppliedFilters contient les filtres appliqués par l'utilisateur
 type AppliedFilters struct {
 	CreationYearMin int
 	CreationYearMax int
 	AlbumYearMin    int
 	AlbumYearMax    int
-	MemberCounts    []int
-	Locations       []string
+	MemberCountMin  int
+	MemberCountMax  int
 	Query           string
 }
 
+// FiltersHandler gère la page de filtres dédiée
 func FiltersHandler(w http.ResponseWriter, r *http.Request) {
-	log.Printf("🎯 ÉTAPE 1: Début - affichage de tous les artistes")
+	log.Printf("🎯 Chargement de la page des filtres")
 
 	// Récupérer tous les artistes
 	allArtists, err := util.FetchArtists()
 	if err != nil {
-		http.Error(w, "Erreur API", 500)
+		http.Error(w, "Erreur API", http.StatusInternalServerError)
 		log.Println("❌ Erreur lors de la récupération des artistes:", err)
 		return
 	}
 
-	log.Printf("📊 ÉTAPE 1: %d artistes récupérés depuis l'API", len(allArtists))
-
-	// Pour l'instant, on affiche tous les artistes SANS AUCUN FILTRE
-	data := FiltersData{
-		Title:   "Tous les artistes (sans filtres)",
-		Artists: allArtists,
-		Count:   len(allArtists),
+	// Récupérer les locations et relations
+	locationResponse, err := util.FetchLocations()
+	if err != nil {
+		log.Println("⚠️  Erreur lors de la récupération des locations:", err)
 	}
 
-	templates.Templates.ExecuteTemplate(w, "filters.gohtml", data)
-	log.Printf("✅ ÉTAPE 1: Page envoyée avec %d artistes", len(allArtists))
+	relationResponse, err := util.FetchRelations()
+	if err != nil {
+		log.Println("⚠️  Erreur lors de la récupération des relations:", err)
+	}
+
+	// Parser les filtres depuis l'URL
+	appliedFilters := parseFilters(r)
+
+	// Appliquer les filtres
+	filteredArtists := applyFilters(allArtists, appliedFilters, relationResponse)
+
+	// Générer les options de filtres
+	filterOptions := generateFilterOptions(allArtists, locationResponse)
+
+	// Préparer les données pour le template
+	data := FiltersData{
+		Title:            "Filtres avancés",
+		Artists:          filteredArtists,
+		Count:            len(filteredArtists),
+		FilterOptions:    filterOptions,
+		AppliedFilters:   appliedFilters,
+		HasActiveFilters: hasActiveFilters(appliedFilters),
+	}
+
+	if err := templates.Templates.ExecuteTemplate(w, "filters.gohtml", data); err != nil {
+		http.Error(w, "Erreur lors du rendu du template", http.StatusInternalServerError)
+		log.Printf("❌ Erreur template: %v", err)
+	}
+
+	log.Printf("✅ Page filtres envoyée : %d artistes affichés", len(filteredArtists))
 }
 
+// parseFilters extrait les paramètres de filtres depuis la requête
 func parseFilters(r *http.Request) AppliedFilters {
 	filters := AppliedFilters{}
 
@@ -89,16 +119,17 @@ func parseFilters(r *http.Request) AppliedFilters {
 		}
 	}
 
-	// Nombre de membres
-	memberCountStrs := r.URL.Query()["member_count"]
-	for _, countStr := range memberCountStrs {
-		if count, err := strconv.Atoi(countStr); err == nil {
-			filters.MemberCounts = append(filters.MemberCounts, count)
+	// Nombre de membres (curseur min/max)
+	if minCount := r.URL.Query().Get("member_count_min"); minCount != "" {
+		if count, err := strconv.Atoi(minCount); err == nil {
+			filters.MemberCountMin = count
 		}
 	}
-
-	// Lieux
-	filters.Locations = r.URL.Query()["location"]
+	if maxCount := r.URL.Query().Get("member_count_max"); maxCount != "" {
+		if count, err := strconv.Atoi(maxCount); err == nil {
+			filters.MemberCountMax = count
+		}
+	}
 
 	// Query de recherche
 	filters.Query = r.URL.Query().Get("q")
@@ -106,6 +137,7 @@ func parseFilters(r *http.Request) AppliedFilters {
 	return filters
 }
 
+// applyFilters applique tous les filtres sur la liste des artistes
 func applyFilters(artists []util.Artist, filters AppliedFilters, relationResponse util.RelationResponse) []util.Artist {
 	var results []util.Artist
 
@@ -132,19 +164,13 @@ func applyFilters(artists []util.Artist, filters AppliedFilters, relationRespons
 			continue
 		}
 
-		// Filtre nombre de membres
-		if len(filters.MemberCounts) > 0 {
-			memberCount := len(artist.Members)
-			if !intInSlice(memberCount, filters.MemberCounts) {
-				continue
-			}
+		// Filtre nombre de membres (curseur min/max)
+		memberCount := len(artist.Members)
+		if filters.MemberCountMin > 0 && memberCount < filters.MemberCountMin {
+			continue
 		}
-
-		// Filtre lieux (avec les données de relations)
-		if len(filters.Locations) > 0 {
-			if !artistHasLocation(artist, filters.Locations, relationResponse) {
-				continue
-			}
+		if filters.MemberCountMax > 0 && memberCount > filters.MemberCountMax {
+			continue
 		}
 
 		results = append(results, artist)
@@ -153,6 +179,7 @@ func applyFilters(artists []util.Artist, filters AppliedFilters, relationRespons
 	return results
 }
 
+// generateFilterOptions génère les options disponibles pour les filtres
 func generateFilterOptions(artists []util.Artist, locationResponse util.LocationResponse) FilterOptions {
 	options := FilterOptions{
 		MinCreationYear: 9999,
@@ -162,7 +189,6 @@ func generateFilterOptions(artists []util.Artist, locationResponse util.Location
 	}
 
 	memberCountSet := make(map[int]bool)
-	locationSet := make(map[string]bool)
 
 	// Analyser tous les artistes pour les options
 	for _, artist := range artists {
@@ -193,7 +219,8 @@ func generateFilterOptions(artists []util.Artist, locationResponse util.Location
 	for count := range memberCountSet {
 		options.MemberCounts = append(options.MemberCounts, count)
 	}
-	// Trier les nombres de membres
+
+	// Trier les nombres de membres (bubble sort simple)
 	for i := 0; i < len(options.MemberCounts); i++ {
 		for j := i + 1; j < len(options.MemberCounts); j++ {
 			if options.MemberCounts[i] > options.MemberCounts[j] {
@@ -202,37 +229,16 @@ func generateFilterOptions(artists []util.Artist, locationResponse util.Location
 		}
 	}
 
-	// Extraire les lieux uniques
-	for _, locData := range locationResponse.Index {
-		for _, location := range locData.Locations {
-			locationSet[location] = true
-		}
-	}
-
-	for location := range locationSet {
-		options.Locations = append(options.Locations, location)
-	}
-
-	// Trier les locations alphabétiquement
-	for i := 0; i < len(options.Locations); i++ {
-		for j := i + 1; j < len(options.Locations); j++ {
-			if options.Locations[i] > options.Locations[j] {
-				options.Locations[i], options.Locations[j] = options.Locations[j], options.Locations[i]
-			}
-		}
-	}
-
-	log.Printf("⚙️  FILTERS: Options générées - Years: %d-%d, Albums: %d-%d, Members: %v, Locations: %d",
+	log.Printf("⚙️  Options générées - Création: %d-%d, Albums: %d-%d, Membres: %v",
 		options.MinCreationYear, options.MaxCreationYear,
 		options.MinAlbumYear, options.MaxAlbumYear,
-		options.MemberCounts, len(options.Locations))
+		options.MemberCounts)
 
 	return options
 }
 
-// Fonctions utilitaires
+// extractAlbumYear extrait l'année du format "DD-MM-YYYY"
 func extractAlbumYear(firstAlbum string) int {
-	// Format: "DD-MM-YYYY"
 	parts := strings.Split(firstAlbum, "-")
 	if len(parts) != 3 {
 		return 0
@@ -243,6 +249,7 @@ func extractAlbumYear(firstAlbum string) int {
 	return 0
 }
 
+// matchesQuery vérifie si un artiste correspond à la recherche textuelle
 func matchesQuery(artist util.Artist, query string) bool {
 	queryLower := strings.ToLower(query)
 
@@ -261,46 +268,10 @@ func matchesQuery(artist util.Artist, query string) bool {
 	return false
 }
 
-func intInSlice(target int, slice []int) bool {
-	for _, item := range slice {
-		if item == target {
-			return true
-		}
-	}
-	return false
-}
-
-func artistHasLocation(artist util.Artist, locations []string, relationResponse util.RelationResponse) bool {
-	// Si aucune location sélectionnée, retourner true
-	if len(locations) == 0 {
-		return true
-	}
-
-	// Trouver les relations pour cet artiste
-	for _, relData := range relationResponse.Index {
-		if relData.ID == artist.ID {
-			// Vérifier si l'artiste a joué dans l'un des lieux sélectionnés
-			for _, selectedLocation := range locations {
-				// Parcourir toutes les locations dans datesLocations
-				for locationKey := range relData.DatesLocations {
-					// Les clés sont formatées comme "city-country", on compare avec selectedLocation
-					if strings.Contains(strings.ToLower(locationKey), strings.ToLower(selectedLocation)) ||
-						strings.Contains(strings.ToLower(selectedLocation), strings.ToLower(locationKey)) {
-						log.Printf("✅ LOCATION: %s trouvé dans %s", artist.Name, locationKey)
-						return true
-					}
-				}
-			}
-			log.Printf("❌ LOCATION: %s non trouvé dans %v", artist.Name, locations)
-			break
-		}
-	}
-	return false
-}
-
+// hasActiveFilters vérifie si des filtres sont actifs
 func hasActiveFilters(filters AppliedFilters) bool {
 	return filters.CreationYearMin > 0 || filters.CreationYearMax > 0 ||
 		filters.AlbumYearMin > 0 || filters.AlbumYearMax > 0 ||
-		len(filters.MemberCounts) > 0 || len(filters.Locations) > 0 ||
+		filters.MemberCountMin > 0 || filters.MemberCountMax > 0 ||
 		filters.Query != ""
 }

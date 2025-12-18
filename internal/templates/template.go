@@ -7,11 +7,15 @@ import (
 
 var Templates *template.Template
 
-// Init template
+// Init charge tous les templates avec les fonctions personnalisées
 func Init() {
 	var err error
-	Templates, err = template.ParseGlob("templates/*.gohtml")
+
+	// Charger les templates avec les fonctions personnalisées
+	Templates, err = template.New("").Funcs(TemplateFuncs()).ParseGlob("templates/*.gohtml")
 	if err != nil {
-		log.Fatal("Erreur lors du chargement des templates:", err)
+		log.Fatalf("❌ Erreur critique lors du chargement des templates: %v", err)
 	}
+
+	log.Println("✅ Templates chargés avec succès")
 }
