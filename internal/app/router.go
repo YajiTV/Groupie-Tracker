@@ -30,6 +30,7 @@ func SetupRouter() *http.ServeMux {
 
 	// Pages protégées
 	mux.HandleFunc("/profile", httphandlers.ProfileHandler)
+	mux.HandleFunc("/profile/update", httphandlers.UpdateProfileHandler)
 
 	return mux
 }

@@ -152,6 +152,7 @@ func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // ProfileHandler affiche le profil de l'utilisateur
+// ProfileHandler affiche le profil de l'utilisateur
 func ProfileHandler(w http.ResponseWriter, r *http.Request) {
 	// Vérifier l'authentification
 	session, ok := auth.GetUserFromRequest(r)
@@ -167,13 +168,59 @@ func ProfileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Récupérer les messages de succès/erreur
+	successMsg := r.URL.Query().Get("success")
+	errorMsg := r.URL.Query().Get("error")
+
 	data := struct {
-		Title string
-		User  interface{}
+		Title   string
+		User    interface{}
+		Success string
+		Error   string
 	}{
-		Title: "Mon profil",
-		User:  user,
+		Title:   "Mon profil",
+		User:    user,
+		Success: successMsg,
+		Error:   errorMsg,
 	}
 
 	templates.Templates.ExecuteTemplate(w, "profile.gohtml", data)
+}
+
+// UpdateProfileHandler met à jour le profil de l'utilisateur
+func UpdateProfileHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Redirect(w, r, "/profile", http.StatusSeeOther)
+		return
+	}
+
+	// Vérifier l'authentification
+	session, ok := auth.GetUserFromRequest(r)
+	if !ok {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	// Récupérer l'utilisateur
+	user, err := storage.GetUserByID(session.UserID)
+	if err != nil {
+		http.Error(w, "Utilisateur introuvable", http.StatusNotFound)
+		return
+	}
+
+	// Récupérer les nouvelles données
+	bio := r.FormValue("bio")
+
+	// Mettre à jour la bio
+	user.Bio = bio
+
+	// Sauvegarder
+	if err := storage.UpdateUser(*user); err != nil {
+		log.Println("Erreur mise à jour profil:", err)
+		http.Redirect(w, r, "/profile?error=update", http.StatusSeeOther)
+		return
+	}
+
+	log.Printf("Profil mis à jour: %s", user.Username)
+	http.Redirect(w, r, "/profile?success=updated", http.StatusSeeOther)
 }
