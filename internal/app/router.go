@@ -16,7 +16,7 @@ func SetupRouter() *http.ServeMux {
 	mux.HandleFunc("/", httphandlers.HomeHandler)
 	mux.HandleFunc("/artist/", httphandlers.ArtistHandler)
 	mux.HandleFunc("/search", httphandlers.SearchHandler)
-	mux.HandleFunc("/filters", httphandlers.FiltersHandler)
+
 	mux.HandleFunc("/api/suggestions", httphandlers.SuggestionsHandler)
 
 	return mux
