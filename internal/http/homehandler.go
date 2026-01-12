@@ -47,17 +47,22 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Printf("📊 %d artistes récupérés depuis l'API", len(allArtists))
 
+	// Récupérer tous les lieux disponibles pour le filtre
+	allLocations := getAllUniqueLocations()
+
 	// Appliquer les filtres
 	displayedArtists := applyHomeFilters(allArtists, filters)
 	log.Printf("✅ %d artistes envoyés au template", len(displayedArtists))
 
 	// Préparer les données pour le template
 	data := struct {
-		Title   string
-		Artists []util.Artist
+		Title        string
+		Artists      []util.Artist
+		AllLocations []string
 	}{
-		Title:   "Groupie Tracker",
-		Artists: displayedArtists,
+		Title:        "Groupie Tracker",
+		Artists:      displayedArtists,
+		AllLocations: allLocations,
 	}
 
 	// Rendre le template
@@ -65,6 +70,31 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Erreur lors du rendu du template", http.StatusInternalServerError)
 		log.Printf("❌ Erreur template: %v", err)
 	}
+}
+
+// getAllUniqueLocations récupère tous les lieux uniques depuis l'API
+func getAllUniqueLocations() []string {
+	locationResponse, err := util.FetchLocations()
+	if err != nil {
+		log.Printf("⚠️ Erreur lors de la récupération des locations: %v", err)
+		return []string{}
+	}
+
+	// Map pour éviter les doublons
+	locationSet := make(map[string]bool)
+	for _, locData := range locationResponse.Index {
+		for _, location := range locData.Locations {
+			locationSet[location] = true
+		}
+	}
+
+	// Convertir en slice
+	var uniqueLocations []string
+	for location := range locationSet {
+		uniqueLocations = append(uniqueLocations, location)
+	}
+
+	return uniqueLocations
 }
 
 // parseHomeFilters extrait les filtres des paramètres URL
@@ -121,6 +151,17 @@ func parseHomeFilters(r *http.Request) HomeFilters {
 func applyHomeFilters(artists []util.Artist, filters HomeFilters) []util.Artist {
 	var filtered []util.Artist
 
+	// Récupérer les locations si le filtre par lieux est actif
+	var locationResponse util.LocationResponse
+	if len(filters.Locations) > 0 {
+		var err error
+		locationResponse, err = util.FetchLocations()
+		if err != nil {
+			log.Printf("⚠️ Erreur lors de la récupération des locations: %v", err)
+			// Continue sans le filtre par lieux
+		}
+	}
+
 	for _, artist := range artists {
 		// Filtre par recherche textuelle (nom + membres)
 		if filters.Query != "" {
@@ -155,6 +196,14 @@ func applyHomeFilters(artists []util.Artist, filters HomeFilters) []util.Artist 
 			}
 		}
 
+		// Filtre par lieux de concerts
+		if len(filters.Locations) > 0 {
+			if !artistHasLocationMatch(artist.ID, filters.Locations, locationResponse) {
+				log.Printf("❌ LOCATIONS: %s éliminé (aucun concert dans %v)", artist.Name, filters.Locations)
+				continue
+			}
+		}
+
 		// Si l'artiste passe tous les filtres, l'ajouter
 		log.Printf("✅ KEEP: %s (année: %d, membres: %d)", artist.Name, artist.CreationDate, len(artist.Members))
 		filtered = append(filtered, artist)
@@ -162,6 +211,26 @@ func applyHomeFilters(artists []util.Artist, filters HomeFilters) []util.Artist 
 
 	log.Printf("🎯 Résultat final: %d artistes après filtrage", len(filtered))
 	return filtered
+}
+
+// artistHasLocationMatch vérifie si l'artiste a au moins un concert dans les lieux sélectionnés
+func artistHasLocationMatch(artistID int, selectedLocations []string, locationResponse util.LocationResponse) bool {
+	// Trouver les locations de l'artiste
+	for _, locData := range locationResponse.Index {
+		if locData.ID == artistID {
+			// Vérifier si au moins un lieu de l'artiste correspond aux filtres
+			for _, artistLocation := range locData.Locations {
+				for _, selectedLocation := range selectedLocations {
+					// Normaliser les lieux pour la comparaison (insensible à la casse)
+					if strings.Contains(strings.ToLower(artistLocation), strings.ToLower(selectedLocation)) {
+						return true
+					}
+				}
+			}
+			return false
+		}
+	}
+	return false
 }
 
 // matchesSearchQuery vérifie si un artiste correspond à la recherche
