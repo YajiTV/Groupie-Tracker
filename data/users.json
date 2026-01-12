@@ -17,7 +17,25 @@
       "avatar_url": "/static/img/default-avatar.png",
       "bio": "dqsdqsdsssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss",
       "created_at": "2025-12-20T00:15:55.8737798+01:00"
+    },
+    {
+      "id": 3,
+      "username": "test",
+      "email": "test@test",
+      "password": "$2a$10$LoQ/83FCVyovnf5MVNnULODgdU6DL1NGWYyB9LszMAUbGk6Ov3YUS",
+      "avatar_url": "/static/img/default-avatar.png",
+      "bio": "",
+      "created_at": "2026-01-12T14:02:50.4565381+01:00"
+    },
+    {
+      "id": 4,
+      "username": "Axel",
+      "email": "axel@axel",
+      "password": "$2a$10$1JquaLlUt7ec9ZWpSToIZukBhE6gJ6DAAlqnptdr1sKoh5PYaPxAi",
+      "avatar_url": "/static/img/default-avatar.png",
+      "bio": "Bonjour",
+      "created_at": "2026-01-12T14:03:34.1115264+01:00"
     }
   ],
-  "last_id": 2
+  "last_id": 4
 }

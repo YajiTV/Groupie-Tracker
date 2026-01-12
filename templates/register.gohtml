@@ -9,7 +9,7 @@
 <body class="min-h-screen bg-neutral-950 text-white flex items-center justify-center">
     <div class="w-full max-w-md p-8">
         <div class="bg-neutral-900 border border-neutral-800 rounded-3xl p-8 shadow-2xl">
-            <h1 class="text-3xl font-bold text-center mb-8">🎸 Inscription</h1>
+            <h1 class="text-3xl font-bold text-center mb-8">Inscription</h1>
             
             {{if eq .Error "exists"}}
             <div class="mb-6 p-4 bg-red-500/10 border border-red-500 rounded-xl text-red-400 text-sm">
@@ -21,7 +21,7 @@
             </div>
             {{else if eq .Error "short"}}
             <div class="mb-6 p-4 bg-red-500/10 border border-red-500 rounded-xl text-red-400 text-sm">
-                Le mdp doit contenir au moins 6 caractères, oui chiant je sais
+                Le mot de passe doit contenir au moins 6 caractères, oui chiant je sais
             </div>
             {{end}}
             

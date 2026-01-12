@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/YajiTV/groupie-tracker/internal/auth"
 	"github.com/YajiTV/groupie-tracker/internal/templates"
 	"github.com/YajiTV/groupie-tracker/internal/util"
 )
@@ -20,7 +21,7 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	allArtists, err := util.FetchArtists()
 	if err != nil {
 		http.Error(w, "Erreur lors de la récupération des artistes", http.StatusInternalServerError)
-		log.Printf("❌ Erreur API: %v", err)
+		log.Printf("Erreur API: %v", err)
 		return
 	}
 
@@ -39,20 +40,23 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Préparer les données pour le template
 	data := struct {
-		Title   string
-		Artists []util.Artist
+		Title           string
+		Artists         []util.Artist
+		IsAuthenticated bool
 	}{
-		Title:   "Groupie Tracker",
-		Artists: displayedArtists,
+		Title:           "Groupie Tracker",
+		Artists:         displayedArtists,
+		IsAuthenticated: auth.IsAuthenticated(r),
 	}
 
 	// Rendre le template
 	if err := templates.Templates.ExecuteTemplate(w, "home.gohtml", data); err != nil {
 		http.Error(w, "Erreur lors du rendu du template", http.StatusInternalServerError)
-		log.Printf("❌ Erreur template: %v", err)
+		log.Printf("Erreur template: %v", err)
 	}
 }
 
 func Handler404(w http.ResponseWriter, r *http.Request) {
-	panic("unimplemented")
+	// TODO: implémenter la page 404
+	http.Error(w, "404 - Page non trouvée", http.StatusNotFound)
 }

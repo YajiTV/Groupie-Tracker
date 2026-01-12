@@ -17,10 +17,16 @@
             <h1 class="text-3xl md:text-4xl font-bold text-center text-white">
                 {{.Title}}
             </h1>
-            <div class="text-right text-neutral-400">
-                <a href="profile" class="hover:underline">Mon profil</a> •
-                <a href="/auth/logout" class="hover:underline">Se déconnecter</a>
-            </div>
+           <div class="text-right text-neutral-400">
+               {{if .IsAuthenticated}}
+    <a href="profile" class="hover:underline">Mon profil</a> •
+    <a href="logout" class="hover:underline">Se déconnecter</a>
+    {{else}}
+    <a href="login" class="hover:underline">Se connecter</a>
+    <a href="register" class="hover:underline ml-4">S'inscrire</a>
+    {{end}}
+</div>
+
         </div>
     </header>
 

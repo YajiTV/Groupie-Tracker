@@ -63,8 +63,6 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	// Créer une session
 	sessionID := auth.Store.CreateSession(user.ID, user.Username)
 	auth.SetCookie(w, sessionID)
-
-	log.Printf("Connexion réussie: %s", username)
 	http.Redirect(w, r, "/profile", http.StatusSeeOther)
 }
 
@@ -187,7 +185,7 @@ func ProfileHandler(w http.ResponseWriter, r *http.Request) {
 	templates.Templates.ExecuteTemplate(w, "profile.gohtml", data)
 }
 
-// UpdateProfileHandler met à jour le profil de l'utilisateur
+// BioProfileHandler met à jour le profil de l'utilisateur
 func UpdateProfileHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Redirect(w, r, "/profile", http.StatusSeeOther)
