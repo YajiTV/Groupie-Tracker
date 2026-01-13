@@ -160,57 +160,73 @@
                 </div>
                 <h3 class="text-lg font-semibold text-white">Nombre de membres</h3>
             </div>
-            <div class="space-y-4 pl-13">
-                <!-- Minimum -->
-                <div class="space-y-2">
-                    <div class="flex justify-between items-center gap-3">
-                        <label for="memberMin" class="text-sm text-neutral-400">Minimum</label>
-                        <input 
-                            type="number" 
-                            id="memberMinInput"
-                            min="1" 
-                            max="8"
-                            value="1"
-                            class="w-16 bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-1 text-sm text-white font-mono font-bold text-center focus:outline-none focus:border-white transition"
-                        >
-                    </div>
-                    <input 
-                        type="range" 
-                        name="member_count_min" 
-                        id="memberMin"
-                        min="1" 
-                        max="8" 
-                        value="1"
-                        class="range-slider range-white"
-                    >
-                </div>
-                
-                <!-- Maximum -->
-                <div class="space-y-2">
-                    <div class="flex justify-between items-center gap-3">
-                        <label for="memberMax" class="text-sm text-neutral-400">Maximum</label>
-                        <input 
-                            type="number" 
-                            id="memberMaxInput"
-                            min="1" 
-                            max="8"
-                            value="8"
-                            class="w-16 bg-neutral-800 border border-neutral-700 rounded-lg px-3 py-1 text-sm text-white font-mono font-bold text-center focus:outline-none focus:border-white transition"
-                        >
-                    </div>
-                    <input 
-                        type="range" 
-                        name="member_count_max" 
-                        id="memberMax"
-                        min="1" 
-                        max="8" 
-                        value="8"
-                        class="range-slider range-white"
-                    >
-                </div>
+            <div class="space-y-3 pl-13">
+                <label class="flex items-center gap-3 cursor-pointer group">
+                    <input type="checkbox" name="member_count" value="1" class="w-5 h-5 bg-neutral-800 border-2 border-neutral-600 rounded checked:bg-white checked:border-white focus:outline-none focus:ring-2 focus:ring-white/50 transition cursor-pointer">
+                    <span class="text-sm text-neutral-300 group-hover:text-white transition">1 membre</span>
+                </label>
+                <label class="flex items-center gap-3 cursor-pointer group">
+                    <input type="checkbox" name="member_count" value="2" class="w-5 h-5 bg-neutral-800 border-2 border-neutral-600 rounded checked:bg-white checked:border-white focus:outline-none focus:ring-2 focus:ring-white/50 transition cursor-pointer">
+                    <span class="text-sm text-neutral-300 group-hover:text-white transition">2 membres</span>
+                </label>
+                <label class="flex items-center gap-3 cursor-pointer group">
+                    <input type="checkbox" name="member_count" value="3" class="w-5 h-5 bg-neutral-800 border-2 border-neutral-600 rounded checked:bg-white checked:border-white focus:outline-none focus:ring-2 focus:ring-white/50 transition cursor-pointer">
+                    <span class="text-sm text-neutral-300 group-hover:text-white transition">3 membres</span>
+                </label>
+                <label class="flex items-center gap-3 cursor-pointer group">
+                    <input type="checkbox" name="member_count" value="4" class="w-5 h-5 bg-neutral-800 border-2 border-neutral-600 rounded checked:bg-white checked:border-white focus:outline-none focus:ring-2 focus:ring-white/50 transition cursor-pointer">
+                    <span class="text-sm text-neutral-300 group-hover:text-white transition">4 membres</span>
+                </label>
+                <label class="flex items-center gap-3 cursor-pointer group">
+                    <input type="checkbox" name="member_count" value="5" class="w-5 h-5 bg-neutral-800 border-2 border-neutral-600 rounded checked:bg-white checked:border-white focus:outline-none focus:ring-2 focus:ring-white/50 transition cursor-pointer">
+                    <span class="text-sm text-neutral-300 group-hover:text-white transition">5 membres</span>
+                </label>
+                <label class="flex items-center gap-3 cursor-pointer group">
+                    <input type="checkbox" name="member_count" value="6" class="w-5 h-5 bg-neutral-800 border-2 border-neutral-600 rounded checked:bg-white checked:border-white focus:outline-none focus:ring-2 focus:ring-white/50 transition cursor-pointer">
+                    <span class="text-sm text-neutral-300 group-hover:text-white transition">6 membres</span>
+                </label>
+                <label class="flex items-center gap-3 cursor-pointer group">
+                    <input type="checkbox" name="member_count" value="7" class="w-5 h-5 bg-neutral-800 border-2 border-neutral-600 rounded checked:bg-white checked:border-white focus:outline-none focus:ring-2 focus:ring-white/50 transition cursor-pointer">
+                    <span class="text-sm text-neutral-300 group-hover:text-white transition">7 membres</span>
+                </label>
+                <label class="flex items-center gap-3 cursor-pointer group">
+                    <input type="checkbox" name="member_count" value="8" class="w-5 h-5 bg-neutral-800 border-2 border-neutral-600 rounded checked:bg-white checked:border-white focus:outline-none focus:ring-2 focus:ring-white/50 transition cursor-pointer">
+                    <span class="text-sm text-neutral-300 group-hover:text-white transition">8 membres</span>
+                </label>
             </div>
         </div>
     </div>
+
+    <!-- LIEUX DE CONCERTS -->
+    <div class="space-y-4 col-span-full">
+        <div class="flex items-center gap-3">
+            <div class="shrink-0 w-10 h-10 bg-neutral-800 rounded-xl flex items-center justify-center">
+                <span class="text-xl">🌍</span>
+            </div>
+            <h3 class="text-lg font-semibold text-white">Lieux de concerts</h3>
+        </div>
+
+        <div class="pl-13">
+            <div class="relative">
+                <select
+                    id="locationSelect"
+                    multiple
+                    size="5"
+                    name="location"
+                    class="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-white transition"
+                >
+                    <option value="" disabled class="text-neutral-500">Sélectionnez un ou plusieurs lieux (Ctrl/Cmd + Clic)</option>
+                    {{range .AllLocations}}
+                    <option value="{{.}}" class="py-2">{{.}}</option>
+                    {{end}}
+                </select>
+                <p class="mt-2 text-xs text-neutral-500">
+                    💡 Maintenez Ctrl (Windows/Linux) ou Cmd (Mac) pour sélectionner plusieurs lieux
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
 
     <!-- ACTION BUTTONS -->
     <div class="flex flex-col sm:flex-row gap-4 pt-6 border-t border-neutral-700">

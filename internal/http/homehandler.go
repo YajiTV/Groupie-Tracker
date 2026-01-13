@@ -3,18 +3,40 @@ package httphandlers
 import (
 	"log"
 	"net/http"
+	"strconv"
+	"strings"
 
 	"github.com/YajiTV/groupie-tracker/internal/templates"
 	"github.com/YajiTV/groupie-tracker/internal/util"
 )
 
+// HomeFilters représente les filtres de la page d'accueil
+type HomeFilters struct {
+	CreationYearMin int
+	CreationYearMax int
+	AlbumYearMin    int
+	AlbumYearMax    int
+	MemberCounts    []int
+	Locations       []string
+	Query           string
+}
+
 // HomeHandler gère la page d'accueil avec filtres
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("🏠 HomeHandler appelé avec URL: %s", r.URL.String())
+
 	// Vérifier que c'est bien la route racine
 	if r.URL.Path != "/" {
-		Handler404(w, r)
+		NotFoundHandler(w, r)
 		return
 	}
+
+	// Parser les filtres depuis l'URL
+	filters := parseHomeFilters(r)
+	log.Printf("🔍 Filtres détectés: Creation(%d-%d), Albums(%d-%d), Membres%v, Lieux%v, Query:'%s'",
+		filters.CreationYearMin, filters.CreationYearMax,
+		filters.AlbumYearMin, filters.AlbumYearMax,
+		filters.MemberCounts, filters.Locations, filters.Query)
 
 	// Récupérer tous les artistes
 	allArtists, err := util.FetchArtists()
@@ -23,27 +45,24 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("❌ Erreur API: %v", err)
 		return
 	}
+	log.Printf("📊 %d artistes récupérés depuis l'API", len(allArtists))
 
-	// Parser les filtres depuis l'URL
-	filters := parseFilters(r)
+	// Récupérer tous les lieux disponibles pour le filtre
+	allLocations := getAllUniqueLocations()
 
-	// Appliquer les filtres si présents
-	var displayedArtists []util.Artist
-	if hasActiveFilters(filters) {
-		relationResponse, _ := util.FetchRelations()
-		displayedArtists = applyFilters(allArtists, filters, relationResponse)
-		log.Printf("🔍 Filtres appliqués: %d artistes trouvés", len(displayedArtists))
-	} else {
-		displayedArtists = allArtists
-	}
+	// Appliquer les filtres
+	displayedArtists := applyHomeFilters(allArtists, filters)
+	log.Printf("✅ %d artistes envoyés au template", len(displayedArtists))
 
 	// Préparer les données pour le template
 	data := struct {
-		Title   string
-		Artists []util.Artist
+		Title        string
+		Artists      []util.Artist
+		AllLocations []string
 	}{
-		Title:   "Groupie Tracker",
-		Artists: displayedArtists,
+		Title:        "Groupie Tracker",
+		Artists:      displayedArtists,
+		AllLocations: allLocations,
 	}
 
 	// Rendre le template
@@ -53,6 +72,192 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func Handler404(w http.ResponseWriter, r *http.Request) {
-	panic("unimplemented")
+// getAllUniqueLocations récupère tous les lieux uniques depuis l'API
+func getAllUniqueLocations() []string {
+	locationResponse, err := util.FetchLocations()
+	if err != nil {
+		log.Printf("⚠️ Erreur lors de la récupération des locations: %v", err)
+		return []string{}
+	}
+
+	// Map pour éviter les doublons
+	locationSet := make(map[string]bool)
+	for _, locData := range locationResponse.Index {
+		for _, location := range locData.Locations {
+			locationSet[location] = true
+		}
+	}
+
+	// Convertir en slice
+	var uniqueLocations []string
+	for location := range locationSet {
+		uniqueLocations = append(uniqueLocations, location)
+	}
+
+	return uniqueLocations
+}
+
+// parseHomeFilters extrait les filtres des paramètres URL
+func parseHomeFilters(r *http.Request) HomeFilters {
+	filters := HomeFilters{}
+
+	// Année de création min
+	if yearStr := r.URL.Query().Get("creation_year_min"); yearStr != "" {
+		if year, err := strconv.Atoi(yearStr); err == nil {
+			filters.CreationYearMin = year
+		}
+	}
+
+	// Année de création max
+	if yearStr := r.URL.Query().Get("creation_year_max"); yearStr != "" {
+		if year, err := strconv.Atoi(yearStr); err == nil {
+			filters.CreationYearMax = year
+		}
+	}
+
+	// Année premier album min
+	if yearStr := r.URL.Query().Get("album_year_min"); yearStr != "" {
+		if year, err := strconv.Atoi(yearStr); err == nil {
+			filters.AlbumYearMin = year
+		}
+	}
+
+	// Année premier album max
+	if yearStr := r.URL.Query().Get("album_year_max"); yearStr != "" {
+		if year, err := strconv.Atoi(yearStr); err == nil {
+			filters.AlbumYearMax = year
+		}
+	}
+
+	// Nombre de membres (peut avoir plusieurs valeurs)
+	if memberStrs := r.URL.Query()["member_count"]; len(memberStrs) > 0 {
+		for _, memberStr := range memberStrs {
+			if member, err := strconv.Atoi(memberStr); err == nil {
+				filters.MemberCounts = append(filters.MemberCounts, member)
+			}
+		}
+	}
+
+	// Lieux (peut avoir plusieurs valeurs)
+	filters.Locations = r.URL.Query()["location"]
+
+	// Recherche textuelle
+	filters.Query = r.URL.Query().Get("q")
+
+	return filters
+}
+
+// applyHomeFilters applique les filtres sur la liste des artistes
+func applyHomeFilters(artists []util.Artist, filters HomeFilters) []util.Artist {
+	var filtered []util.Artist
+
+	// Récupérer les locations si le filtre par lieux est actif
+	var locationResponse util.LocationResponse
+	if len(filters.Locations) > 0 {
+		var err error
+		locationResponse, err = util.FetchLocations()
+		if err != nil {
+			log.Printf("⚠️ Erreur lors de la récupération des locations: %v", err)
+			// Continue sans le filtre par lieux
+		}
+	}
+
+	for _, artist := range artists {
+		// Filtre par recherche textuelle (nom + membres)
+		if filters.Query != "" {
+			if !matchesSearchQuery(artist, filters.Query) {
+				log.Printf("❌ SEARCH: %s éliminé (ne contient pas '%s')", artist.Name, filters.Query)
+				continue
+			}
+		}
+
+		// Filtre par année de création min
+		if filters.CreationYearMin > 0 {
+			if artist.CreationDate < filters.CreationYearMin {
+				log.Printf("❌ CREATION MIN: %s éliminé (année %d < %d)", artist.Name, artist.CreationDate, filters.CreationYearMin)
+				continue
+			}
+		}
+
+		// Filtre par année de création max
+		if filters.CreationYearMax > 0 {
+			if artist.CreationDate > filters.CreationYearMax {
+				log.Printf("❌ CREATION MAX: %s éliminé (année %d > %d)", artist.Name, artist.CreationDate, filters.CreationYearMax)
+				continue
+			}
+		}
+
+		// Filtre par nombre de membres
+		if len(filters.MemberCounts) > 0 {
+			memberCount := len(artist.Members)
+			if !intInHomeSlice(memberCount, filters.MemberCounts) {
+				log.Printf("❌ MEMBERS: %s éliminé (%d membres pas dans %v)", artist.Name, memberCount, filters.MemberCounts)
+				continue
+			}
+		}
+
+		// Filtre par lieux de concerts
+		if len(filters.Locations) > 0 {
+			if !artistHasLocationMatch(artist.ID, filters.Locations, locationResponse) {
+				log.Printf("❌ LOCATIONS: %s éliminé (aucun concert dans %v)", artist.Name, filters.Locations)
+				continue
+			}
+		}
+
+		// Si l'artiste passe tous les filtres, l'ajouter
+		log.Printf("✅ KEEP: %s (année: %d, membres: %d)", artist.Name, artist.CreationDate, len(artist.Members))
+		filtered = append(filtered, artist)
+	}
+
+	log.Printf("🎯 Résultat final: %d artistes après filtrage", len(filtered))
+	return filtered
+}
+
+// artistHasLocationMatch vérifie si l'artiste a au moins un concert dans les lieux sélectionnés
+func artistHasLocationMatch(artistID int, selectedLocations []string, locationResponse util.LocationResponse) bool {
+	// Trouver les locations de l'artiste
+	for _, locData := range locationResponse.Index {
+		if locData.ID == artistID {
+			// Vérifier si au moins un lieu de l'artiste correspond aux filtres
+			for _, artistLocation := range locData.Locations {
+				for _, selectedLocation := range selectedLocations {
+					// Normaliser les lieux pour la comparaison (insensible à la casse)
+					if strings.Contains(strings.ToLower(artistLocation), strings.ToLower(selectedLocation)) {
+						return true
+					}
+				}
+			}
+			return false
+		}
+	}
+	return false
+}
+
+// matchesSearchQuery vérifie si un artiste correspond à la recherche
+func matchesSearchQuery(artist util.Artist, query string) bool {
+	queryLower := strings.ToLower(query)
+
+	// Recherche dans le nom de l'artiste
+	if strings.Contains(strings.ToLower(artist.Name), queryLower) {
+		return true
+	}
+
+	// Recherche dans les membres
+	for _, member := range artist.Members {
+		if strings.Contains(strings.ToLower(member), queryLower) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// intInHomeSlice vérifie si un entier est présent dans un slice
+func intInHomeSlice(target int, slice []int) bool {
+	for _, item := range slice {
+		if item == target {
+			return true
+		}
+	}
+	return false
 }
