@@ -9,13 +9,33 @@ import (
 	"github.com/YajiTV/groupie-tracker/internal/util"
 )
 
+// HomeFilters représente les filtres de la page d'accueil
+type HomeFilters struct {
+	CreationYearMin int
+	CreationYearMax int
+	AlbumYearMin    int
+	AlbumYearMax    int
+	MemberCounts    []int
+	Locations       []string
+	Query           string
+}
+
 // HomeHandler gère la page d'accueil avec filtres
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("🏠 HomeHandler appelé avec URL: %s", r.URL.String())
+
 	// Vérifier que c'est bien la route racine
 	if r.URL.Path != "/" {
-		Handler404(w, r)
+		NotFoundHandler(w, r)
 		return
 	}
+
+	// Parser les filtres depuis l'URL
+	filters := parseHomeFilters(r)
+	log.Printf("🔍 Filtres détectés: Creation(%d-%d), Albums(%d-%d), Membres%v, Lieux%v, Query:'%s'",
+		filters.CreationYearMin, filters.CreationYearMax,
+		filters.AlbumYearMin, filters.AlbumYearMax,
+		filters.MemberCounts, filters.Locations, filters.Query)
 
 	// Récupérer tous les artistes
 	allArtists, err := util.FetchArtists()
@@ -24,19 +44,14 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Erreur API: %v", err)
 		return
 	}
+	log.Printf("📊 %d artistes récupérés depuis l'API", len(allArtists))
 
-	// Parser les filtres depuis l'URL
-	filters := parseFilters(r)
+	// Récupérer tous les lieux disponibles pour le filtre
+	allLocations := getAllUniqueLocations()
 
-	// Appliquer les filtres si présents
-	var displayedArtists []util.Artist
-	if hasActiveFilters(filters) {
-		relationResponse, _ := util.FetchRelations()
-		displayedArtists = applyFilters(allArtists, filters, relationResponse)
-		log.Printf("🔍 Filtres appliqués: %d artistes trouvés", len(displayedArtists))
-	} else {
-		displayedArtists = allArtists
-	}
+	// Appliquer les filtres
+	displayedArtists := applyHomeFilters(allArtists, filters)
+	log.Printf("✅ %d artistes envoyés au template", len(displayedArtists))
 
 	// Préparer les données pour le template
 	data := struct {
@@ -57,6 +72,5 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func Handler404(w http.ResponseWriter, r *http.Request) {
-	// TODO: implémenter la page 404
-	http.Error(w, "404 - Page non trouvée", http.StatusNotFound)
+	panic("unimplemented")
 }
