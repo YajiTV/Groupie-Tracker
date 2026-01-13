@@ -14,8 +14,6 @@ func Init() {
 	// Charger les templates avec les fonctions personnalisées
 	Templates, err = template.New("").Funcs(TemplateFuncs()).ParseGlob("templates/*.gohtml")
 	if err != nil {
-		log.Fatalf("❌ Erreur critique lors du chargement des templates: %v", err)
+		log.Fatalf("Erreur critique lors du chargement des templates: %v", err)
 	}
-
-	log.Println("✅ Templates chargés avec succès")
 }
