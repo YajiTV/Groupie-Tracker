@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -298,11 +299,15 @@ func getAllUniqueLocationsFromRelations(artistLocations map[int][]string) []stri
 		}
 	}
 
-	// Convertir la map en slice triée
+	// Convertir la map en slice
+	// Ref piscine
 	locations := make([]string, 0, len(locationMap))
 	for location := range locationMap {
 		locations = append(locations, location)
 	}
+
+	// AJOUT : Trier par ordre alphabétique
+	sort.Strings(locations)
 
 	return locations
 }
