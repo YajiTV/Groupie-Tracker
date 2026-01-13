@@ -25,6 +25,17 @@ type HomeFilters struct {
 	Query           string
 }
 
+// RelationData représente les relations d'un artiste depuis l'API
+type RelationData struct {
+	ID        int                 `json:"id"`
+	Locations map[string][]string `json:"datesLocations"`
+}
+
+// RelationsResponse représente la réponse de l'API relations
+type RelationsResponse struct {
+	Index []RelationData `json:"index"`
+}
+
 // HomeHandler gère la page d'accueil avec filtres
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("HomeHandler appelé avec URL: %s", r.URL.String())
@@ -51,12 +62,16 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Printf("%d artistes récupérés depuis l'API", len(allArtists))
 
+	// Récupérer les relations (locations) pour tous les artistes
+	artistLocations := fetchArtistLocations()
+	log.Printf("%d artistes ont des locations", len(artistLocations))
+
 	// Récupérer tous les lieux disponibles pour le filtre
-	allLocations := getAllUniqueLocations()
+	allLocations := getAllUniqueLocationsFromRelations(artistLocations)
 	log.Printf("%d lieux uniques récupérés", len(allLocations))
 
 	// Appliquer les filtres
-	displayedArtists := applyHomeFilters(allArtists, filters)
+	displayedArtists := applyHomeFilters(allArtists, filters, artistLocations)
 	log.Printf("%d artistes après filtrage", len(displayedArtists))
 
 	// Préparer les données pour le template
@@ -76,6 +91,7 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Rendre le template avec gestion d'erreur améliorée
 	if err := templates.Templates.ExecuteTemplate(w, "home.gohtml", data); err != nil {
+		log.Printf("Erreur template COMPLÈTE: %v", err)
 		http.Error(w, fmt.Sprintf("Erreur lors du rendu du template: %v", err), http.StatusInternalServerError)
 		return
 	}
@@ -85,8 +101,7 @@ func parseHomeFilters(r *http.Request) HomeFilters {
 	query := r.URL.Query()
 	filters := HomeFilters{}
 
-	// CORRECTION : Parser avec les bons noms de paramètres
-	// L'URL contient creation_year_min, album_year_min, etc.
+	// Parser les années de création
 	if val := query.Get("creation_year_min"); val != "" {
 		filters.CreationYearMin, _ = strconv.Atoi(val)
 	}
@@ -102,51 +117,39 @@ func parseHomeFilters(r *http.Request) HomeFilters {
 		filters.AlbumYearMax, _ = strconv.Atoi(val)
 	}
 
-	// Parser les nombres de membres (plusieurs paramètres possibles)
-	// Soit un range avec member_count_min et member_count_max
-	memberCountMin := 0
-	memberCountMax := 0
-
-	if val := query.Get("member_count_min"); val != "" {
-		memberCountMin, _ = strconv.Atoi(val)
-	}
-	if val := query.Get("member_count_max"); val != "" {
-		memberCountMax, _ = strconv.Atoi(val)
-	}
-
-	// Générer la liste des nombres de membres dans le range
-	if memberCountMin > 0 && memberCountMax > 0 {
-		for i := memberCountMin; i <= memberCountMax; i++ {
-			filters.MemberCounts = append(filters.MemberCounts, i)
-		}
-	}
-
-	// Ou des valeurs spécifiques séparées par des virgules
-	if val := query.Get("members"); val != "" {
-		members := strings.Split(val, ",")
-		filters.MemberCounts = []int{} // Reset si on a des valeurs spécifiques
-		for _, m := range members {
-			if count, err := strconv.Atoi(strings.TrimSpace(m)); err == nil {
-				filters.MemberCounts = append(filters.MemberCounts, count)
+	// Parser les nombres de membres
+	if memberCounts := query["member_count"]; len(memberCounts) > 0 {
+		memberMap := make(map[int]bool)
+		for _, m := range memberCounts {
+			if count, err := strconv.Atoi(strings.TrimSpace(m)); err == nil && count > 0 {
+				memberMap[count] = true
 			}
+		}
+		for count := range memberMap {
+			filters.MemberCounts = append(filters.MemberCounts, count)
 		}
 	}
 
 	// Parser les lieux
-	if val := query.Get("locations"); val != "" {
-		filters.Locations = strings.Split(val, ",")
-		for i := range filters.Locations {
-			filters.Locations[i] = strings.TrimSpace(filters.Locations[i])
+	if locations := query["location"]; len(locations) > 0 {
+		for _, loc := range locations {
+			cleanLoc := strings.TrimSpace(loc)
+			if cleanLoc != "" {
+				filters.Locations = append(filters.Locations, cleanLoc)
+			}
 		}
 	}
 
 	// Parser la recherche
 	filters.Query = strings.TrimSpace(query.Get("q"))
 
+	log.Printf("Members parsed: %v from URL params", filters.MemberCounts)
+	log.Printf("Locations parsed: %v from URL params", filters.Locations)
+
 	return filters
 }
 
-func applyHomeFilters(allArtists []util.Artist, filters HomeFilters) []util.Artist {
+func applyHomeFilters(allArtists []util.Artist, filters HomeFilters, artistLocations map[int][]string) []util.Artist {
 	var filteredArtists []util.Artist
 
 	for _, artist := range allArtists {
@@ -190,6 +193,29 @@ func applyHomeFilters(allArtists []util.Artist, filters HomeFilters) []util.Arti
 			}
 		}
 
+		// NOUVEAU : Filtrer par lieux de concert
+		if len(filters.Locations) > 0 {
+			locations := artistLocations[artist.ID]
+			locationMatch := false
+
+			// Vérifier si l'artiste a joué dans au moins un des lieux sélectionnés
+			for _, filterLoc := range filters.Locations {
+				for _, artistLoc := range locations {
+					if strings.EqualFold(filterLoc, artistLoc) {
+						locationMatch = true
+						break
+					}
+				}
+				if locationMatch {
+					break
+				}
+			}
+
+			if !locationMatch {
+				continue
+			}
+		}
+
 		// Filtrer par recherche (nom d'artiste, membres, etc.)
 		if filters.Query != "" {
 			query := strings.ToLower(filters.Query)
@@ -221,18 +247,8 @@ func applyHomeFilters(allArtists []util.Artist, filters HomeFilters) []util.Arti
 	return filteredArtists
 }
 
-func getAllUniqueLocations() []string {
-	// Structure pour l'API Relations de Groupie Tracker
-	type RelationData struct {
-		Index     int                 `json:"index"`
-		Locations map[string][]string `json:"datesLocations"`
-	}
-
-	type RelationsResponse struct {
-		Index []RelationData `json:"index"`
-	}
-
-	// Récupérer les relations depuis l'API avec timeout
+// fetchArtistLocations récupère les locations pour tous les artistes depuis l'API Relations
+func fetchArtistLocations() map[int][]string {
 	client := &http.Client{
 		Timeout: 10 * time.Second,
 	}
@@ -240,39 +256,59 @@ func getAllUniqueLocations() []string {
 	resp, err := client.Get("https://groupietrackers.herokuapp.com/api/relation")
 	if err != nil {
 		log.Printf("Erreur lors de la récupération des relations: %v", err)
-		return []string{}
+		return make(map[int][]string)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		log.Printf("Status code non-OK pour relations: %d", resp.StatusCode)
-		return []string{}
+		return make(map[int][]string)
 	}
 
 	var relations RelationsResponse
 	if err := json.NewDecoder(resp.Body).Decode(&relations); err != nil {
 		log.Printf("Erreur lors du décodage des relations: %v", err)
-		return []string{}
+		return make(map[int][]string)
 	}
 
-	// Extraire tous les lieux uniques
-	locationMap := make(map[string]bool)
+	// Construire la map artistID -> []locations
+	artistLocations := make(map[int][]string)
 
 	for _, relation := range relations.Index {
+		var locations []string
 		for location := range relation.Locations {
-			// Nettoyer et normaliser le nom du lieu
 			cleanLocation := strings.TrimSpace(location)
 			if cleanLocation != "" {
-				locationMap[cleanLocation] = true
+				locations = append(locations, cleanLocation)
 			}
+		}
+		artistLocations[relation.ID] = locations
+	}
+
+	return artistLocations
+}
+
+// getAllUniqueLocationsFromRelations extrait tous les lieux uniques depuis les relations
+func getAllUniqueLocationsFromRelations(artistLocations map[int][]string) []string {
+	locationMap := make(map[string]bool)
+
+	for _, locations := range artistLocations {
+		for _, location := range locations {
+			locationMap[location] = true
 		}
 	}
 
-	// Convertir la map en slice
+	// Convertir la map en slice triée
 	locations := make([]string, 0, len(locationMap))
 	for location := range locationMap {
 		locations = append(locations, location)
 	}
 
 	return locations
+}
+
+// Garder pour compatibilité mais maintenant on utilise getAllUniqueLocationsFromRelations
+func getAllUniqueLocations() []string {
+	artistLocations := fetchArtistLocations()
+	return getAllUniqueLocationsFromRelations(artistLocations)
 }
