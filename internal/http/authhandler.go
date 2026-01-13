@@ -1,12 +1,9 @@
 package httphandlers
 
 import (
-	"log"
 	"net/http"
-	"time"
 
 	"github.com/YajiTV/groupie-tracker/internal/auth"
-	"github.com/YajiTV/groupie-tracker/internal/models"
 	"github.com/YajiTV/groupie-tracker/internal/storage"
 	"github.com/YajiTV/groupie-tracker/internal/templates"
 )
@@ -19,17 +16,14 @@ func LoginPageHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	errorMsg := r.URL.Query().Get("error")
-	successMsg := r.URL.Query().Get("success")
-
 	data := struct {
 		Title   string
 		Error   string
 		Success string
 	}{
 		Title:   "Connexion",
-		Error:   errorMsg,
-		Success: successMsg,
+		Error:   r.URL.Query().Get("error"),
+		Success: r.URL.Query().Get("success"),
 	}
 
 	templates.Templates.ExecuteTemplate(w, "login.gohtml", data)
@@ -45,23 +39,14 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	username := r.FormValue("username")
 	password := r.FormValue("password")
 
-	// Récup l'utilisateur
-	user, err := storage.GetUserByUsername(username)
+	// Utiliser la logique métier
+	sessionID, err := authenticateUser(username, password)
 	if err != nil {
-		log.Println("Utilisateur introuvable:", username)
 		http.Redirect(w, r, "/login?error=invalid", http.StatusSeeOther)
 		return
 	}
 
-	// check mpd
-	if !auth.CheckPassword(user.Password, password) {
-		log.Println("Mot de passe pas bon:", username)
-		http.Redirect(w, r, "/login?error=invalid", http.StatusSeeOther)
-		return
-	}
-
-	// Créer une session
-	sessionID := auth.Store.CreateSession(user.ID, user.Username)
+	// Créer le cookie de session
 	auth.SetCookie(w, sessionID)
 	http.Redirect(w, r, "/profile", http.StatusSeeOther)
 }
@@ -74,14 +59,12 @@ func RegisterPageHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	errorMsg := r.URL.Query().Get("error")
-
 	data := struct {
 		Title string
 		Error string
 	}{
 		Title: "Inscription",
-		Error: errorMsg,
+		Error: r.URL.Query().Get("error"),
 	}
 
 	templates.Templates.ExecuteTemplate(w, "register.gohtml", data)
@@ -98,43 +81,15 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	email := r.FormValue("email")
 	password := r.FormValue("password")
 
-	// Validation basique
-	if username == "" || email == "" || password == "" {
-		http.Redirect(w, r, "/register?error=empty", http.StatusSeeOther)
-		return
-	}
-
-	if len(password) < 6 {
-		http.Redirect(w, r, "/register?error=short", http.StatusSeeOther)
-		return
-	}
-
-	// Hash du mot de passe
-	hash, err := auth.HashPassword(password)
+	// Utiliser la logique métier
+	err := registerNewUser(username, email, password)
 	if err != nil {
-		log.Println("Erreur de hash:", err)
-		http.Redirect(w, r, "/register?error=server", http.StatusSeeOther)
+		// Gérer les différents types d'erreurs
+		errorCode := getErrorCode(err)
+		http.Redirect(w, r, "/register?error="+errorCode, http.StatusSeeOther)
 		return
 	}
 
-	// Créer l'utilisateur
-	user := models.User{
-		Username:  username,
-		Email:     email,
-		Password:  hash,
-		AvatarURL: "/static/img/default-avatar.png",
-		Bio:       "",
-		CreatedAt: time.Now(),
-	}
-
-	_, err = storage.CreateUser(user)
-	if err != nil {
-		log.Println("Erreur création utilisateur:", err)
-		http.Redirect(w, r, "/register?error=exists", http.StatusSeeOther)
-		return
-	}
-
-	log.Printf("Nouvel utilisateur créé: %s", username)
 	http.Redirect(w, r, "/login?success=registered", http.StatusSeeOther)
 }
 
@@ -149,7 +104,6 @@ func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
-// ProfileHandler affiche le profil de l'utilisateur
 // ProfileHandler affiche le profil de l'utilisateur
 func ProfileHandler(w http.ResponseWriter, r *http.Request) {
 	// Vérifier l'authentification
@@ -166,10 +120,6 @@ func ProfileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Récupérer les messages de succès/erreur
-	successMsg := r.URL.Query().Get("success")
-	errorMsg := r.URL.Query().Get("error")
-
 	data := struct {
 		Title   string
 		User    interface{}
@@ -178,14 +128,14 @@ func ProfileHandler(w http.ResponseWriter, r *http.Request) {
 	}{
 		Title:   "Mon profil",
 		User:    user,
-		Success: successMsg,
-		Error:   errorMsg,
+		Success: r.URL.Query().Get("success"),
+		Error:   r.URL.Query().Get("error"),
 	}
 
 	templates.Templates.ExecuteTemplate(w, "profile.gohtml", data)
 }
 
-// BioProfileHandler met à jour le profil de l'utilisateur
+// UpdateProfileHandler met à jour le profil de l'utilisateur
 func UpdateProfileHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Redirect(w, r, "/profile", http.StatusSeeOther)
@@ -199,26 +149,14 @@ func UpdateProfileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Récupérer l'utilisateur
-	user, err := storage.GetUserByID(session.UserID)
-	if err != nil {
-		http.Error(w, "Utilisateur introuvable", http.StatusNotFound)
-		return
-	}
-
-	// Récupérer les nouvelles données
 	bio := r.FormValue("bio")
 
-	// Mettre à jour la bio
-	user.Bio = bio
-
-	// Sauvegarder
-	if err := storage.UpdateUser(*user); err != nil {
-		log.Println("Erreur mise à jour profil:", err)
+	// Utiliser la logique métier
+	err := updateUserProfile(session.UserID, bio)
+	if err != nil {
 		http.Redirect(w, r, "/profile?error=update", http.StatusSeeOther)
 		return
 	}
 
-	log.Printf("Profil mis à jour: %s", user.Username)
 	http.Redirect(w, r, "/profile?success=updated", http.StatusSeeOther)
 }
