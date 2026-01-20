@@ -2,7 +2,6 @@ package httphandlers
 
 import (
 	"errors"
-	"log"
 	"net/mail"
 	"strings"
 	"time"
@@ -12,7 +11,7 @@ import (
 	"github.com/YajiTV/groupie-tracker/internal/storage"
 )
 
-// Erreurs personnalisées pour une meilleure gestion
+// Erreurs personnalisées
 var (
 	ErrEmptyFields        = errors.New("champs vides")
 	ErrPasswordTooShort   = errors.New("mot de passe trop court")
@@ -30,45 +29,33 @@ var (
 func authenticateUser(username, password string) (string, error) {
 	username = strings.TrimSpace(username)
 
-	// Récupérer l'utilisateur
 	user, err := storage.GetUserByUsername(username)
 	if err != nil {
-		log.Printf("Utilisateur introuvable: %s", username)
 		return "", ErrInvalidCredentials
 	}
 
-	// Vérifier le mot de passe
 	if !auth.CheckPassword(user.Password, password) {
-		log.Printf("Mot de passe incorrect pour: %s", username)
 		return "", ErrInvalidCredentials
 	}
 
-	// Créer une session
 	sessionID := auth.Store.CreateSession(user.ID, user.Username)
-	log.Printf("Connexion réussie: %s", username)
-
 	return sessionID, nil
 }
 
 // registerNewUser crée un nouvel utilisateur
 func registerNewUser(username, email, password string) error {
-	// Normaliser un minimum
 	username = strings.TrimSpace(username)
 	email = strings.TrimSpace(email)
 
-	// Validation des champs
 	if err := validateRegistrationFields(username, email, password); err != nil {
 		return err
 	}
 
-	// Hash du mot de passe
 	hash, err := auth.HashPassword(password)
 	if err != nil {
-		log.Printf("Erreur de hash: %v", err)
 		return ErrServerError
 	}
 
-	// Créer l'utilisateur
 	user := models.User{
 		Username:  username,
 		Email:     email,
@@ -80,12 +67,9 @@ func registerNewUser(username, email, password string) error {
 
 	_, err = storage.CreateUser(user)
 	if err != nil {
-		log.Printf("Erreur création utilisateur: %v", err)
-		// Si votre storage renvoie une erreur spécifique, vous pourrez l'affiner.
 		return ErrUserExists
 	}
 
-	log.Printf("Nouvel utilisateur créé: %s", username)
 	return nil
 }
 
@@ -112,28 +96,21 @@ func validateRegistrationFields(username, email, password string) error {
 
 // updateUserProfile met à jour le profil d'un utilisateur
 func updateUserProfile(userID int, bio string) error {
-	// Récupérer l'utilisateur
 	user, err := storage.GetUserByID(userID)
 	if err != nil {
-		log.Printf("Utilisateur introuvable: %d", userID)
 		return ErrUserNotFound
 	}
 
-	// Valider la bio
 	if len(bio) > 500 {
 		return ErrBioTooLong
 	}
 
-	// Mettre à jour la bio
 	user.Bio = bio
 
-	// Sauvegarder
 	if err := storage.UpdateUser(*user); err != nil {
-		log.Printf("Erreur mise à jour profil: %v", err)
 		return ErrServerError
 	}
 
-	log.Printf("Profil mis à jour: %s", user.Username)
 	return nil
 }
 
@@ -159,9 +136,8 @@ func getErrorCode(err error) string {
 	}
 }
 
-// isValidEmail vérifie si un email est valide (validation fiable)
+// isValidEmail vérifie si un email est valide
 func isValidEmail(email string) bool {
-	// ParseAddress valide une adresse au format RFC (ex: "a@b.com") [web:13]
 	_, err := mail.ParseAddress(email)
 	return err == nil
 }
