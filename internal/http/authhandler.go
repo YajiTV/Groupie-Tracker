@@ -1,6 +1,7 @@
 package httphandlers
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/YajiTV/groupie-tracker/internal/auth"
@@ -42,6 +43,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	// Utiliser la logique métier
 	sessionID, err := authenticateUser(username, password)
 	if err != nil {
+		log.Printf("Login error (user=%q): %v", username, err)
 		http.Redirect(w, r, "/login?error=invalid", http.StatusSeeOther)
 		return
 	}
@@ -84,7 +86,9 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	// Utiliser la logique métier
 	err := registerNewUser(username, email, password)
 	if err != nil {
-		// Gérer les différents types d'erreurs
+		// IMPORTANT: afficher l'erreur réelle dans les logs
+		log.Printf("Register error (user=%q, email=%q): %v", username, email, err)
+
 		errorCode := getErrorCode(err)
 		http.Redirect(w, r, "/register?error="+errorCode, http.StatusSeeOther)
 		return
@@ -154,6 +158,7 @@ func UpdateProfileHandler(w http.ResponseWriter, r *http.Request) {
 	// Utiliser la logique métier
 	err := updateUserProfile(session.UserID, bio)
 	if err != nil {
+		log.Printf("UpdateProfile error (userID=%d): %v", session.UserID, err)
 		http.Redirect(w, r, "/profile?error=update", http.StatusSeeOther)
 		return
 	}

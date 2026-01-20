@@ -35,7 +35,16 @@
       "avatar_url": "/static/img/default-avatar.png",
       "bio": "Bonjour",
       "created_at": "2026-01-12T14:03:34.1115264+01:00"
+    },
+    {
+      "id": 5,
+      "username": "bonjour",
+      "email": "bonjour@bonjour",
+      "password": "$2a$10$afp0CKuv7EFKthlY1Qd1lOp8oJc3j8RXMCW2eIDUjT75He8GgjkMu",
+      "avatar_url": "/static/img/default-avatar.png",
+      "bio": "",
+      "created_at": "2026-01-20T16:38:19.443477554+01:00"
     }
   ],
-  "last_id": 4
+  "last_id": 5
 }

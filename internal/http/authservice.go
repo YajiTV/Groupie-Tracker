@@ -3,6 +3,8 @@ package httphandlers
 import (
 	"errors"
 	"log"
+	"net/mail"
+	"strings"
 	"time"
 
 	"github.com/YajiTV/groupie-tracker/internal/auth"
@@ -18,10 +20,16 @@ var (
 	ErrInvalidCredentials = errors.New("identifiants invalides")
 	ErrUserNotFound       = errors.New("utilisateur introuvable")
 	ErrServerError        = errors.New("erreur serveur")
+
+	ErrInvalidEmail     = errors.New("email invalide")
+	ErrUsernameTooShort = errors.New("nom d'utilisateur trop court")
+	ErrBioTooLong       = errors.New("bio trop longue")
 )
 
 // authenticateUser authentifie un utilisateur et retourne un sessionID
 func authenticateUser(username, password string) (string, error) {
+	username = strings.TrimSpace(username)
+
 	// Récupérer l'utilisateur
 	user, err := storage.GetUserByUsername(username)
 	if err != nil {
@@ -44,6 +52,10 @@ func authenticateUser(username, password string) (string, error) {
 
 // registerNewUser crée un nouvel utilisateur
 func registerNewUser(username, email, password string) error {
+	// Normaliser un minimum
+	username = strings.TrimSpace(username)
+	email = strings.TrimSpace(email)
+
 	// Validation des champs
 	if err := validateRegistrationFields(username, email, password); err != nil {
 		return err
@@ -69,6 +81,7 @@ func registerNewUser(username, email, password string) error {
 	_, err = storage.CreateUser(user)
 	if err != nil {
 		log.Printf("Erreur création utilisateur: %v", err)
+		// Si votre storage renvoie une erreur spécifique, vous pourrez l'affiner.
 		return ErrUserExists
 	}
 
@@ -78,24 +91,20 @@ func registerNewUser(username, email, password string) error {
 
 // validateRegistrationFields valide les données d'inscription
 func validateRegistrationFields(username, email, password string) error {
-	// Vérifier les champs vides
 	if username == "" || email == "" || password == "" {
 		return ErrEmptyFields
 	}
 
-	// Vérifier la longueur du mot de passe
 	if len(password) < 6 {
 		return ErrPasswordTooShort
 	}
 
-	// Vérifier la validité de l'email (basique)
-	if !isValidEmail(email) {
-		return errors.New("email invalide")
+	if len(username) < 3 {
+		return ErrUsernameTooShort
 	}
 
-	// Vérifier la longueur du username
-	if len(username) < 3 {
-		return errors.New("nom d'utilisateur trop court")
+	if !isValidEmail(email) {
+		return ErrInvalidEmail
 	}
 
 	return nil
@@ -112,7 +121,7 @@ func updateUserProfile(userID int, bio string) error {
 
 	// Valider la bio
 	if len(bio) > 500 {
-		return errors.New("bio trop longue")
+		return ErrBioTooLong
 	}
 
 	// Mettre à jour la bio
@@ -139,31 +148,20 @@ func getErrorCode(err error) string {
 		return "exists"
 	case ErrInvalidCredentials:
 		return "invalid"
+	case ErrInvalidEmail:
+		return "email"
+	case ErrUsernameTooShort:
+		return "username"
+	case ErrBioTooLong:
+		return "bio"
 	default:
 		return "server"
 	}
 }
 
-// isValidEmail vérifie si un email est valide (validation basique)
+// isValidEmail vérifie si un email est valide (validation fiable)
 func isValidEmail(email string) bool {
-	// Validation basique
-	if len(email) < 3 {
-		return false
-	}
-
-	// Vérifier la présence de @ et .
-	atIndex := -1
-	dotIndex := -1
-
-	for i, char := range email {
-		if char == '@' {
-			atIndex = i
-		}
-		if char == '.' && atIndex != -1 {
-			dotIndex = i
-		}
-	}
-
-	// @ doit être présent, pas au début, et . doit être après @
-	return atIndex > 0 && dotIndex > atIndex+1 && dotIndex < len(email)-1
+	// ParseAddress valide une adresse au format RFC (ex: "a@b.com") [web:13]
+	_, err := mail.ParseAddress(email)
+	return err == nil
 }
