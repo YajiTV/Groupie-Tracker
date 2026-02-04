@@ -54,22 +54,19 @@
             
             <!-- Formulaire de modification de la bio -->
             <div class="border-t border-neutral-800 pt-8">
-                <h3 class="text-xl font-semibold mb-4">Modifier ma bio</h3>
+                <h3 class="text-xl font-semibold mb-4">Ma biographie</h3>
                 
                 <form action="/profile/update" method="POST" class="space-y-4">
                     <div>
-                        <label for="bio" class="block text-sm font-medium mb-2 text-neutral-300">
-                            Biographie
-                        </label>
                         <textarea 
                             id="bio" 
                             name="bio" 
                             rows="4"
                             maxlength="200"
-                            placeholder="Parlez de vous en quelques mots..."
+                            placeholder="Parlez de vous en quelques mots"
                             class="w-full px-4 py-3 bg-neutral-800 border border-neutral-700 rounded-xl focus:outline-none focus:border-white transition resize-none"
                         >{{.User.Bio}}</textarea>
-                        <p class="mt-2 text-xs text-neutral-500">Woooow 200 caractères max trkl</p>
+                        <p class="mt-2 text-xs text-neutral-500">200 caractères max</p>
                     </div>
                     
                     <button 
@@ -80,13 +77,6 @@
                     </button>
                 </form>
             </div>
-        </div>
-        
-        <!-- Section à venir -->
-        <div class="mt-8 p-8 bg-neutral-900/50 border border-neutral-800 rounded-3xl text-center">
-            <p class="text-neutral-500">
-                la suite arrive tkt pas
-            </p>
         </div>
     </div>
 </body>

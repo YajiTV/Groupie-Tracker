@@ -51,7 +51,6 @@ func (s *SessionStore) CreateSession(userID int, username string) string {
 		Username:  username,
 		ExpiresAt: time.Now().Add(SessionDuration),
 	}
-
 	return sessionID
 }
 
