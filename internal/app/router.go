@@ -14,21 +14,21 @@ func SetupRouter() *http.ServeMux {
 	fs := http.FileServer(http.Dir(StaticDir))
 	mux.Handle("/static/", http.StripPrefix("/static/", fs))
 
-	// Pages publiques
+	// Public pages
 	mux.HandleFunc("/", httphandlers.HomeHandler)
 	mux.HandleFunc("/artist/", httphandlers.ArtistHandler)
 	mux.HandleFunc("/search", httphandlers.SearchHandler)
 
 	mux.HandleFunc("/api/suggestions", httphandlers.SuggestionsHandler)
 
-	// Authentification
+	// Authentication
 	mux.HandleFunc("/login", httphandlers.LoginPageHandler)
 	mux.HandleFunc("/register", httphandlers.RegisterPageHandler)
 	mux.HandleFunc("/logout", httphandlers.LogoutHandler)
 	mux.HandleFunc("/auth/login", httphandlers.LoginHandler)
 	mux.HandleFunc("/auth/register", httphandlers.RegisterHandler)
 
-	// Pages protégées
+	// Protected pages
 	mux.HandleFunc("/profile", httphandlers.ProfileHandler)
 	mux.HandleFunc("/profile/update", httphandlers.UpdateProfileHandler)
 
@@ -36,7 +36,7 @@ func SetupRouter() *http.ServeMux {
 }
 
 func Start() {
-	// Initialiser le stockage
+	// Initialize storage
 	if err := storage.InitUsers(); err != nil {
 		log.Fatalf("Erreur initialisation stockage: %v", err)
 	}

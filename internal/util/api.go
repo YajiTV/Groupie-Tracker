@@ -40,7 +40,7 @@ type RelationResponse struct {
 	Index []RelationData `json:"index"`
 }
 
-// Structure pour passer les données de location à la carte
+// Structure to pass location data to the map
 type ArtistLocation struct {
 	Name  string   `json:"name"`
 	Dates []string `json:"dates"`
@@ -52,7 +52,7 @@ type ArtistWithLocations struct {
 }
 
 func (a Artist) GetSpotifyURL() string {
-	// Encode le nom de l'artiste pour l'URL
+	// Encode artist name for URL
 	encodedName := url.QueryEscape(a.Name)
 	return "https://open.spotify.com/search/" + encodedName
 }
@@ -88,13 +88,13 @@ func FetchArtistByID(id int) (Artist, error) {
 }
 
 func FetchArtistWithLocations(id int) (ArtistWithLocations, error) {
-	// 1. Récupérer l'artiste
+	// 1. Retrieve artist
 	artist, err := FetchArtistByID(id)
 	if err != nil {
 		return ArtistWithLocations{}, err
 	}
 
-	// 2. Récupérer les locations
+	// 2. Retrieve locations
 	locResp, err := http.Get(LocationsURL)
 	if err != nil {
 		return ArtistWithLocations{Artist: artist}, err
@@ -106,7 +106,7 @@ func FetchArtistWithLocations(id int) (ArtistWithLocations, error) {
 		return ArtistWithLocations{Artist: artist}, err
 	}
 
-	// 3. Récupérer les relations (dates par lieu)
+	// 3. Retrieve relations (dates per location)
 	relResp, err := http.Get(RelationURL)
 	if err != nil {
 		return ArtistWithLocations{Artist: artist}, err
@@ -118,13 +118,13 @@ func FetchArtistWithLocations(id int) (ArtistWithLocations, error) {
 		return ArtistWithLocations{Artist: artist}, err
 	}
 
-	// 4. Trouver les données pour cet artiste
+	// 4. Find data for this artist
 	var locations []ArtistLocation
 
-	// Trouver les locations de l'artiste
+	// Find artist's locations
 	for _, locData := range locationResponse.Index {
 		if locData.ID == id {
-			// Trouver les dates pour cet artiste
+			// Find dates for this artist
 			var datesLocations map[string][]string
 			for _, relData := range relationResponse.Index {
 				if relData.ID == id {
@@ -133,7 +133,7 @@ func FetchArtistWithLocations(id int) (ArtistWithLocations, error) {
 				}
 			}
 
-			// Construire la liste des locations avec leurs dates
+			// Build list of locations with their dates
 			for _, locName := range locData.Locations {
 				dates := datesLocations[locName]
 				locations = append(locations, ArtistLocation{

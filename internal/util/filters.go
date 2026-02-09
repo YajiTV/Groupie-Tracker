@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// Structure pour les paramètres de filtres
+// Structure for filter parameters
 type FilterParams struct {
 	CreationYearMin int
 	CreationYearMax int
@@ -16,31 +16,31 @@ type FilterParams struct {
 	Query           string
 }
 
-// extractAlbumYear extrait l'année du format "DD-MM-YYYY"
+// extractAlbumYear extracts the year from "DD-MM-YYYY" format
 func extractAlbumYear(firstAlbum string) int {
-	// Format API: "14-03-1973"
+	// API format: "14-03-1973"
 	parts := strings.Split(firstAlbum, "-")
 	if len(parts) != 3 {
-		return 0 // Données invalides
+		return 0
 	}
 
-	// L'année est le 3ème élément (index 2)
+	// Year is the 3rd element (index 2) after day and month
 	if year, err := strconv.Atoi(parts[2]); err == nil {
 		return year
 	}
 	return 0
 }
 
-// FilterByCreationYear filtre les artistes par année de création
+// FilterByCreationYear filters artists by creation year
 func FilterByCreationYear(artists []Artist, minYear, maxYear int) []Artist {
-	// Si aucune limite, retourner tous les artistes
+	// If no limit, return all artists
 	if minYear == 0 && maxYear == 0 {
 		return artists
 	}
 
 	var filtered []Artist
 	for _, artist := range artists {
-		// Vérifier les limites
+		// Check limits
 		if minYear > 0 && artist.CreationDate < minYear {
 			continue
 		}
@@ -53,14 +53,14 @@ func FilterByCreationYear(artists []Artist, minYear, maxYear int) []Artist {
 	return filtered
 }
 
-// ApplyAllFilters applique tous les filtres (pour l'instant juste année de création)
+// ApplyAllFilters applies all filters (for now just creation year)
 func ApplyAllFilters(artists []Artist, params FilterParams) []Artist {
 	result := artists
 
-	// Filtrage par année de création
+	// Filter by creation year
 	result = FilterByCreationYear(result, params.CreationYearMin, params.CreationYearMax)
 
-	// TODO: Ajouter les autres filtres au fur et à mesure
+	// TODO: Add other filters gradually
 
 	return result
 }

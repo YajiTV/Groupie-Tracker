@@ -76,7 +76,7 @@ func AddFavorite(f Favorite) error {
 
 	for _, existing := range data.Favorites {
 		if existing.UserID == f.UserID && existing.ArtistID == f.ArtistID {
-			return nil // déjà là
+			return nil // already there
 		}
 	}
 
@@ -93,7 +93,7 @@ func RemoveFavorite(userID, artistID int) error {
 		return err
 	}
 
-	out := data.Favorites[:0]
+	out := data.Favorites[:0] // Reuse underlying slice to avoid allocation
 	for _, f := range data.Favorites {
 		if !(f.UserID == userID && f.ArtistID == artistID) {
 			out = append(out, f)

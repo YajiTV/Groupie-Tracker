@@ -14,14 +14,14 @@ var (
 	UsersFile = "data/users.json"
 )
 
-// InitUsers initialise le fichier users.json
+// InitUsers initializes the users.json file
 func InitUsers() error {
-	// Créer le dossier data
+	// Create data folder
 	if err := os.MkdirAll("data", 0755); err != nil {
 		return err
 	}
 
-	// Vérifier si le fichier existe
+	// Check if file exists
 	if _, err := os.Stat(UsersFile); os.IsNotExist(err) {
 		userData := models.UserData{Users: []models.User{}, LastID: 0}
 		return saveJSON(UsersFile, userData)
@@ -30,7 +30,7 @@ func InitUsers() error {
 	return nil
 }
 
-// saveJSON sauvegarde des données dans un fichier JSON
+// saveJSON saves data to a JSON file
 func saveJSON(filename string, data interface{}) error {
 	file, err := os.Create(filename)
 	if err != nil {
@@ -43,7 +43,7 @@ func saveJSON(filename string, data interface{}) error {
 	return encoder.Encode(data)
 }
 
-// loadJSON charge des données depuis un fichier JSON
+// loadJSON loads data from a JSON file
 func loadJSON(filename string, data interface{}) error {
 	file, err := os.Open(filename)
 	if err != nil {
@@ -55,7 +55,7 @@ func loadJSON(filename string, data interface{}) error {
 	return decoder.Decode(data)
 }
 
-// GetAllUsers récupère tous les utilisateurs
+// GetAllUsers retrieves all users
 func GetAllUsers() ([]models.User, error) {
 	userMutex.RLock()
 	defer userMutex.RUnlock()
@@ -67,7 +67,7 @@ func GetAllUsers() ([]models.User, error) {
 	return userData.Users, nil
 }
 
-// GetUserByID récupère un utilisateur par son ID
+// GetUserByID retrieves a user by ID
 func GetUserByID(id int) (*models.User, error) {
 	users, err := GetAllUsers()
 	if err != nil {
@@ -82,7 +82,7 @@ func GetUserByID(id int) (*models.User, error) {
 	return nil, errors.New("utilisateur introuvable")
 }
 
-// GetUserByUsername récupère un utilisateur par son username
+// GetUserByUsername retrieves a user by username
 func GetUserByUsername(username string) (*models.User, error) {
 	users, err := GetAllUsers()
 	if err != nil {
@@ -97,7 +97,7 @@ func GetUserByUsername(username string) (*models.User, error) {
 	return nil, errors.New("utilisateur introuvable")
 }
 
-// CreateUser crée un nouvel utilisateur
+// CreateUser creates a new user
 func CreateUser(user models.User) (*models.User, error) {
 	userMutex.Lock()
 	defer userMutex.Unlock()
@@ -107,7 +107,7 @@ func CreateUser(user models.User) (*models.User, error) {
 		return nil, err
 	}
 
-	// Vérifier si le username existe déjà
+	// Check if username already exists
 	for _, u := range userData.Users {
 		if u.Username == user.Username {
 			return nil, errors.New("nom d'utilisateur déjà pris")
@@ -117,7 +117,7 @@ func CreateUser(user models.User) (*models.User, error) {
 		}
 	}
 
-	// Créer le nouvel utilisateur
+	// Create new user
 	userData.LastID++
 	user.ID = userData.LastID
 	userData.Users = append(userData.Users, user)
@@ -129,7 +129,7 @@ func CreateUser(user models.User) (*models.User, error) {
 	return &user, nil
 }
 
-// UpdateUser met à jour un utilisateur
+// UpdateUser updates a user
 func UpdateUser(user models.User) error {
 	userMutex.Lock()
 	defer userMutex.Unlock()

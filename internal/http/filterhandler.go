@@ -11,7 +11,7 @@ import (
 	"github.com/YajiTV/groupie-tracker/internal/util"
 )
 
-// HomeFilters représente les filtres de la page d'accueil
+// HomeFilters represents the home page filters
 type HomeFilters struct {
 	CreationYearMin int
 	CreationYearMax int
@@ -22,23 +22,23 @@ type HomeFilters struct {
 	Query           string
 }
 
-// RelationData représente les relations d'un artiste depuis l'API
+// RelationData represents an artist's relations from the API
 type RelationData struct {
 	ID        int                 `json:"id"`
 	Locations map[string][]string `json:"datesLocations"`
 }
 
-// RelationsResponse représente la réponse de l'API relations
+// RelationsResponse represents the relations API response
 type RelationsResponse struct {
 	Index []RelationData `json:"index"`
 }
 
-// parseHomeFilters extrait et parse les filtres depuis les paramètres URL
+// parseHomeFilters extracts and parses filters from URL parameters
 func parseHomeFilters(r *http.Request) HomeFilters {
 	query := r.URL.Query()
 	filters := HomeFilters{}
 
-	// Parser les années de création
+	// Parse creation years
 	if val := query.Get("creation_year_min"); val != "" {
 		filters.CreationYearMin, _ = strconv.Atoi(val)
 	}
@@ -46,7 +46,7 @@ func parseHomeFilters(r *http.Request) HomeFilters {
 		filters.CreationYearMax, _ = strconv.Atoi(val)
 	}
 
-	// Parser les années d'album
+	// Parse album years
 	if val := query.Get("album_year_min"); val != "" {
 		filters.AlbumYearMin, _ = strconv.Atoi(val)
 	}
@@ -54,9 +54,9 @@ func parseHomeFilters(r *http.Request) HomeFilters {
 		filters.AlbumYearMax, _ = strconv.Atoi(val)
 	}
 
-	// Parser les nombres de membres
+	// Parse member counts
 	if memberCounts := query["member_count"]; len(memberCounts) > 0 {
-		memberMap := make(map[int]bool)
+		memberMap := make(map[int]bool) // Map for automatic deduplication
 		for _, m := range memberCounts {
 			if count, err := strconv.Atoi(strings.TrimSpace(m)); err == nil && count > 0 {
 				memberMap[count] = true
@@ -67,7 +67,7 @@ func parseHomeFilters(r *http.Request) HomeFilters {
 		}
 	}
 
-	// Parser les lieux
+	// Parse locations
 	if locations := query["location"]; len(locations) > 0 {
 		for _, loc := range locations {
 			cleanLoc := strings.TrimSpace(loc)
@@ -77,38 +77,38 @@ func parseHomeFilters(r *http.Request) HomeFilters {
 		}
 	}
 
-	// Parser la recherche
+	// Parse search query
 	filters.Query = strings.TrimSpace(query.Get("q"))
 
 	return filters
 }
 
-// applyHomeFilters applique les filtres sur la liste d'artistes
+// applyHomeFilters applies filters on the artist list
 func applyHomeFilters(allArtists []util.Artist, filters HomeFilters, artistLocations map[int][]string) []util.Artist {
 	var filteredArtists []util.Artist
 
 	for _, artist := range allArtists {
-		// Filtrer par année de création
+		// Filter by creation year
 		if !filterByCreationYear(artist, filters) {
 			continue
 		}
 
-		// Filtrer par année du premier album
+		// Filter by first album year
 		if !filterByFirstAlbum(artist, filters) {
 			continue
 		}
 
-		// Filtrer par nombre de membres
+		// Filter by member count
 		if !filterByMemberCount(artist, filters) {
 			continue
 		}
 
-		// Filtrer par lieux de concert
+		// Filter by concert locations
 		if !filterByLocation(artist, filters, artistLocations) {
 			continue
 		}
 
-		// Filtrer par recherche textuelle
+		// Filter by text search
 		if !filterByQuery(artist, filters) {
 			continue
 		}
@@ -119,7 +119,7 @@ func applyHomeFilters(allArtists []util.Artist, filters HomeFilters, artistLocat
 	return filteredArtists
 }
 
-// filterByCreationYear vérifie si l'artiste correspond au filtre d'année de création
+// filterByCreationYear checks if the artist matches the creation year filter
 func filterByCreationYear(artist util.Artist, filters HomeFilters) bool {
 	if filters.CreationYearMin > 0 && artist.CreationDate < filters.CreationYearMin {
 		return false
@@ -130,13 +130,13 @@ func filterByCreationYear(artist util.Artist, filters HomeFilters) bool {
 	return true
 }
 
-// filterByFirstAlbum vérifie si l'artiste correspond au filtre d'année du premier album
+// filterByFirstAlbum checks if the artist matches the first album year filter
 func filterByFirstAlbum(artist util.Artist, filters HomeFilters) bool {
 	if artist.FirstAlbum == "" || len(artist.FirstAlbum) < 4 {
 		return true
 	}
 
-	firstAlbumYear, err := strconv.Atoi(artist.FirstAlbum[len(artist.FirstAlbum)-4:])
+	firstAlbumYear, err := strconv.Atoi(artist.FirstAlbum[len(artist.FirstAlbum)-4:]) // Extract last 4 characters (year)
 	if err != nil {
 		return true
 	}
@@ -150,7 +150,7 @@ func filterByFirstAlbum(artist util.Artist, filters HomeFilters) bool {
 	return true
 }
 
-// filterByMemberCount vérifie si l'artiste correspond au filtre de nombre de membres
+// filterByMemberCount checks if the artist matches the member count filter
 func filterByMemberCount(artist util.Artist, filters HomeFilters) bool {
 	if len(filters.MemberCounts) == 0 {
 		return true
@@ -164,7 +164,7 @@ func filterByMemberCount(artist util.Artist, filters HomeFilters) bool {
 	return false
 }
 
-// filterByLocation vérifie si l'artiste correspond au filtre de lieux de concert
+// filterByLocation checks if the artist matches the concert location filter
 func filterByLocation(artist util.Artist, filters HomeFilters, artistLocations map[int][]string) bool {
 	if len(filters.Locations) == 0 {
 		return true
@@ -183,7 +183,7 @@ func filterByLocation(artist util.Artist, filters HomeFilters, artistLocations m
 	return false
 }
 
-// filterByQuery vérifie si l'artiste correspond à la recherche textuelle
+// filterByQuery checks if the artist matches the text search
 func filterByQuery(artist util.Artist, filters HomeFilters) bool {
 	if filters.Query == "" {
 		return true
@@ -191,12 +191,12 @@ func filterByQuery(artist util.Artist, filters HomeFilters) bool {
 
 	query := strings.ToLower(filters.Query)
 
-	// Recherche dans le nom
+	// Search in name
 	if strings.Contains(strings.ToLower(artist.Name), query) {
 		return true
 	}
 
-	// Recherche dans les membres
+	// Search in members
 	for _, member := range artist.Members {
 		if strings.Contains(strings.ToLower(member), query) {
 			return true
@@ -206,10 +206,10 @@ func filterByQuery(artist util.Artist, filters HomeFilters) bool {
 	return false
 }
 
-// fetchArtistLocations récupère les locations pour tous les artistes depuis l'API Relations
+// fetchArtistLocations retrieves locations for all artists from the Relations API
 func fetchArtistLocations() map[int][]string {
 	client := &http.Client{
-		Timeout: 10 * time.Second,
+		Timeout: 10 * time.Second, // Timeout to avoid blocking
 	}
 
 	resp, err := client.Get("https://groupietrackers.herokuapp.com/api/relation")
@@ -227,7 +227,6 @@ func fetchArtistLocations() map[int][]string {
 		return make(map[int][]string)
 	}
 
-	// Construire la map artistID -> []locations
 	artistLocations := make(map[int][]string)
 
 	for _, relation := range relations.Index {
@@ -244,9 +243,9 @@ func fetchArtistLocations() map[int][]string {
 	return artistLocations
 }
 
-// getAllUniqueLocationsFromRelations extrait tous les lieux uniques depuis les relations
+// getAllUniqueLocationsFromRelations extracts all unique locations from relations
 func getAllUniqueLocationsFromRelations(artistLocations map[int][]string) []string {
-	locationMap := make(map[string]bool)
+	locationMap := make(map[string]bool) // Map for automatic deduplication
 
 	for _, locations := range artistLocations {
 		for _, location := range locations {
@@ -254,13 +253,11 @@ func getAllUniqueLocationsFromRelations(artistLocations map[int][]string) []stri
 		}
 	}
 
-	// Convertir la map en slice
 	locations := make([]string, 0, len(locationMap))
 	for location := range locationMap {
 		locations = append(locations, location)
 	}
 
-	// Trier par ordre alphabétique (insensible à la casse)
 	sort.Slice(locations, func(i, j int) bool {
 		return strings.ToLower(locations[i]) < strings.ToLower(locations[j])
 	})
@@ -268,7 +265,7 @@ func getAllUniqueLocationsFromRelations(artistLocations map[int][]string) []stri
 	return locations
 }
 
-// getAllUniqueLocations récupère tous les lieux uniques (fonction wrapper pour compatibilité)
+// getAllUniqueLocations retrieves all unique locations (wrapper function for compatibility)
 func getAllUniqueLocations() []string {
 	artistLocations := fetchArtistLocations()
 	return getAllUniqueLocationsFromRelations(artistLocations)

@@ -9,34 +9,34 @@ import (
 	"github.com/YajiTV/groupie-tracker/internal/util"
 )
 
-// HomeHandler gère la page d'accueil avec filtres
+// HomeHandler handles the home page with filters
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
-	// Vérifier que c'est bien la route racine
+	// Check that this is the root route
 	if r.URL.Path != "/" {
 		NotFoundHandler(w, r)
 		return
 	}
 
-	// Parser les filtres depuis l'URL
+	// Parse filters from URL
 	filters := parseHomeFilters(r)
 
-	// Récupérer tous les artistes
+	// Retrieve all artists
 	allArtists, err := util.FetchArtists()
 	if err != nil {
 		http.Error(w, "Erreur lors de la récupération des artistes", http.StatusInternalServerError)
 		return
 	}
 
-	// Récupérer les relations (locations) pour tous les artistes
+	// Retrieve relations (locations) for all artists
 	artistLocations := fetchArtistLocations()
 
-	// Récupérer tous les lieux disponibles pour le filtre
+	// Retrieve all available locations for the filter
 	allLocations := getAllUniqueLocationsFromRelations(artistLocations)
 
-	// Appliquer les filtres
+	// Apply filters
 	displayedArtists := applyHomeFilters(allArtists, filters, artistLocations)
 
-	// Préparer les données pour le template
+	// Prepare data for the template
 	data := struct {
 		Title           string
 		Artists         []util.Artist
@@ -51,7 +51,7 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 		IsAuthenticated: auth.IsAuthenticated(r),
 	}
 
-	// Rendre le template
+	// Render the template
 	if err := templates.Templates.ExecuteTemplate(w, "home.gohtml", data); err != nil {
 		http.Error(w, fmt.Sprintf("Erreur lors du rendu du template: %v", err), http.StatusInternalServerError)
 		return

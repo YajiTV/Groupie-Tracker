@@ -11,21 +11,21 @@ import (
 	"github.com/YajiTV/groupie-tracker/internal/storage"
 )
 
-// Erreurs personnalisées
+// Custom errors
 var (
-	ErrEmptyFields        = errors.New("champs vides")
-	ErrPasswordTooShort   = errors.New("mot de passe trop court")
-	ErrUserExists         = errors.New("utilisateur existe déjà")
-	ErrInvalidCredentials = errors.New("identifiants invalides")
-	ErrUserNotFound       = errors.New("utilisateur introuvable")
-	ErrServerError        = errors.New("erreur serveur")
+	ErrEmptyFields        = errors.New("empty fields")
+	ErrPasswordTooShort   = errors.New("password too short")
+	ErrUserExists         = errors.New("user already exists")
+	ErrInvalidCredentials = errors.New("invalid credentials")
+	ErrUserNotFound       = errors.New("user not found")
+	ErrServerError        = errors.New("server error")
 
-	ErrInvalidEmail     = errors.New("email invalide")
-	ErrUsernameTooShort = errors.New("nom d'utilisateur trop court")
-	ErrBioTooLong       = errors.New("bio trop longue")
+	ErrInvalidEmail     = errors.New("invalid email")
+	ErrUsernameTooShort = errors.New("username too short")
+	ErrBioTooLong       = errors.New("bio too long")
 )
 
-// authenticateUser authentifie un utilisateur et retourne un sessionID
+// authenticateUser authenticates a user and returns a sessionID
 func authenticateUser(username, password string) (string, error) {
 	username = strings.TrimSpace(username)
 
@@ -42,7 +42,7 @@ func authenticateUser(username, password string) (string, error) {
 	return sessionID, nil
 }
 
-// registerNewUser crée un nouvel utilisateur
+// registerNewUser creates a new user
 func registerNewUser(username, email, password string) error {
 	username = strings.TrimSpace(username)
 	email = strings.TrimSpace(email)
@@ -73,17 +73,17 @@ func registerNewUser(username, email, password string) error {
 	return nil
 }
 
-// validateRegistrationFields valide les données d'inscription
+// validateRegistrationFields validates registration data
 func validateRegistrationFields(username, email, password string) error {
 	if username == "" || email == "" || password == "" {
 		return ErrEmptyFields
 	}
 
-	if len(password) < 6 {
+	if len(password) < 6 { // Recommended secure minimum
 		return ErrPasswordTooShort
 	}
 
-	if len(username) < 3 {
+	if len(username) < 3 { // Minimum to avoid too short usernames
 		return ErrUsernameTooShort
 	}
 
@@ -94,14 +94,14 @@ func validateRegistrationFields(username, email, password string) error {
 	return nil
 }
 
-// updateUserProfile met à jour le profil d'un utilisateur
+// updateUserProfile updates a user's profile
 func updateUserProfile(userID int, bio string) error {
 	user, err := storage.GetUserByID(userID)
 	if err != nil {
 		return ErrUserNotFound
 	}
 
-	if len(bio) > 500 {
+	if len(bio) > 500 { // Limit to avoid too long bios
 		return ErrBioTooLong
 	}
 
@@ -114,7 +114,7 @@ func updateUserProfile(userID int, bio string) error {
 	return nil
 }
 
-// getErrorCode convertit une erreur en code d'erreur pour l'URL
+// getErrorCode converts an error to an error code for the URL
 func getErrorCode(err error) string {
 	switch err {
 	case ErrEmptyFields:
@@ -136,7 +136,7 @@ func getErrorCode(err error) string {
 	}
 }
 
-// isValidEmail vérifie si un email est valide
+// isValidEmail checks if an email is valid
 func isValidEmail(email string) bool {
 	_, err := mail.ParseAddress(email)
 	return err == nil

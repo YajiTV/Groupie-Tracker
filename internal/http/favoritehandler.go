@@ -12,14 +12,14 @@ import (
 )
 
 func ToggleFavoriteHandler(w http.ResponseWriter, r *http.Request) {
-	// Auth via cookie session (ton système actuel)
+	// Auth via cookie session (current system)
 	session, ok := auth.GetUserFromRequest(r)
 	if !ok {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
 
-	// URL attendue : /favorite/toggle/12
+	// Expected URL: /favorite/toggle/12
 	idStr := strings.TrimPrefix(r.URL.Path, "/favorite/toggle/")
 	artistID, err := strconv.Atoi(idStr)
 	if err != nil {
@@ -27,14 +27,14 @@ func ToggleFavoriteHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Récupérer l'artiste via l'API (fonction déjà existante)
+	// Retrieve artist via API (existing function)
 	artist, err := util.FetchArtistByID(artistID)
 	if err != nil {
 		http.Error(w, "Artiste introuvable", http.StatusNotFound)
 		return
 	}
 
-	// Toggle : si déjà favori => remove, sinon add
+	// Toggle: if already favorite => remove, otherwise add
 	isFav, _ := storage.IsFavorite(session.UserID, artistID)
 	if isFav {
 		_ = storage.RemoveFavorite(session.UserID, artistID)
@@ -48,7 +48,7 @@ func ToggleFavoriteHandler(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	// Retour à la page précédente (artist page)
+	// Return to previous page (artist page)
 	ref := r.Header.Get("Referer")
 	if ref == "" {
 		ref = "/"

@@ -9,56 +9,55 @@ import (
 	"github.com/YajiTV/groupie-tracker/internal/util"
 )
 
-// Structure pour UNE suggestion
+// Structure for ONE suggestion
 type Suggestion struct {
-	Text     string `json:"text"`      // Le texte à afficher : "Queen" ou "Freddie Mercury"
-	Type     string `json:"type"`      // Le type : "artiste" ou "membre"
-	ArtistID int    `json:"artist_id"` // L'ID de l'artiste pour faire le lien
+	Text     string `json:"text"`      // The text to display: "Queen" or "Freddie Mercury"
+	Type     string `json:"type"`      // The type: "artist" or "member"
+	ArtistID int    `json:"artist_id"` // The artist ID to make the link
 }
 
-// Structure pour la réponse complète (ce qu'on renvoie en JSON)
+// Structure for the complete response (what we return as JSON)
 type SuggestionsResponse struct {
 	Suggestions []Suggestion `json:"suggestions"`
 }
 
 func SuggestionsHandler(w http.ResponseWriter, r *http.Request) {
-	// 1. Récupérer ce que l'utilisateur a tapé
+	// 1. Get what the user typed
 	query := strings.TrimSpace(r.URL.Query().Get("q"))
 
-	// Si la recherche est vide, on renvoie une liste vide
+	// If the search is empty, return an empty list
 	if query == "" {
 		sendJSONResponse(w, SuggestionsResponse{Suggestions: []Suggestion{}})
 		return
 	}
 
-	// 2. Récupérer TOUS les artistes de l'API
+	// 2. Retrieve ALL artists from the API
 	allArtists, err := util.FetchArtists()
 	if err != nil {
 		http.Error(w, "Erreur API", 500)
-		log.Println("Erreur suggestions:", err)
+		log.Println("Suggestions error:", err)
 		return
 	}
 
-	// 3. Chercher les correspondances
+	// 3. Search for matches
 	suggestions := findSuggestions(allArtists, query)
 
-	// 4. Renvoyer le JSON
+	// 4. Return the JSON
 	sendJSONResponse(w, SuggestionsResponse{Suggestions: suggestions})
 }
 
-// Fonction qui cherche les correspondances dans les artistes
+// Function that searches for matches in artists
 func findSuggestions(artists []util.Artist, query string) []Suggestion {
 	var suggestions []Suggestion
 	queryLower := strings.ToLower(query)
-	maxSuggestions := 8 // Limite à 8 suggestions max
+	maxSuggestions := 8 // Limit to avoid too long list
 
 	for _, artist := range artists {
-		// Si on a déjà assez de suggestions, on s'arrête
 		if len(suggestions) >= maxSuggestions {
 			break
 		}
 
-		// RECHERCHE DANS LE NOM DE L'ARTISTE
+		// SEARCH IN ARTIST NAME
 		if strings.Contains(strings.ToLower(artist.Name), queryLower) {
 			suggestions = append(suggestions, Suggestion{
 				Text:     artist.Name,
@@ -67,9 +66,8 @@ func findSuggestions(artists []util.Artist, query string) []Suggestion {
 			})
 		}
 
-		// RECHERCHE DANS LES MEMBRES (chaque membre séparément)
+		// SEARCH IN MEMBERS (each member separately)
 		for _, member := range artist.Members {
-			// Vérifier qu'on n'a pas déjà trop de suggestions
 			if len(suggestions) >= maxSuggestions {
 				break
 			}
@@ -87,14 +85,14 @@ func findSuggestions(artists []util.Artist, query string) []Suggestion {
 	return suggestions
 }
 
-// Fonction utilitaire pour renvoyer du JSON proprement
+// Utility function to return JSON cleanly
 func sendJSONResponse(w http.ResponseWriter, data interface{}) {
-	// Dire au navigateur qu'on renvoie du JSON
+	// Tell the browser we're returning JSON
 	w.Header().Set("Content-Type", "application/json")
 
-	// Transformer notre struct en JSON et l'envoyer
+	// Transform our struct to JSON and send it
 	if err := json.NewEncoder(w).Encode(data); err != nil {
 		http.Error(w, "Erreur encodage JSON", 500)
-		log.Println("Erreur JSON:", err)
+		log.Println("JSON error:", err)
 	}
 }
