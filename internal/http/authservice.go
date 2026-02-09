@@ -60,7 +60,7 @@ func registerNewUser(username, email, password string) error {
 		Username:  username,
 		Email:     email,
 		Password:  hash,
-		AvatarURL: "/static/img/logo.png",
+		AvatarURL: "~/static/img/",
 		Bio:       "",
 		CreatedAt: time.Now(),
 	}
